@@ -1,0 +1,26 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "TurtleWatch"
+  navbar:
+    right:
+      - href: index.qmd
+        text: Background
+      - href: closure_rules.qmd
+        text: Closure Rules
+      - href: closure_status.qmd
+        text: Conservation Area Status
+      - href: data_dashboard.qmd
+        text: Data Dashboard
+
+format:
+  html:
+    theme: lux
+    css: styles.css
+    toc: true
+    include-after-body: footer.html
+
+
+

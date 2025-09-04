@@ -1,0 +1,970 @@
+/* css styles */
+
+/* ---------------------------------- */
+/* NAVBAR                            */
+/* ---------------------------------- */
+
+/* Adjusts the height of the logo in the top navbar */
+.navbar-brand img {
+  height: 60px;           /* fixed height for logo */
+  max-height: none;       /* disables any browser-imposed limit */
+}
+
+.navbar {
+  background-color: #003366 !important;  /* NOAA deep blue */
+  border-bottom: none;
+}
+
+.navbar a,
+.navbar-brand,
+.navbar-nav .nav-link {
+  color: white !important; /* Make links white */
+}
+
+.navbar a:hover,
+.navbar-nav .nav-link:hover {
+  color: #aad8ff !important; /* Light blue on hover */
+}
+
+/* Center the dropdown under its navbar item */
+.navbar .dropdown-menu {
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  right: auto !important;
+}
+
+/* Dropdown menu */
+.dropdown-menu {
+  background-color: white;
+  border-radius: 10px;
+  border: none;
+  padding: 0.25rem 0; /* Reduce vertical padding */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Dropdown items */
+.dropdown-menu .dropdown-item {
+  background-color: transparent;
+  color: #003366 !important;
+  padding: 0.5rem 1rem;       /* Keep this symmetric */
+  margin: 0;                 /* Remove margin to prevent overflow */
+  border-radius: 0;          /* No pill shape */
+  transition: background-color 0.2s ease-in-out;
+  width: 100%;               /* Ensures it fills dropdown width */
+  box-sizing: border-box;    /* Prevents overflow from padding */
+}
+
+/* Hover effect */
+.dropdown-menu .dropdown-item:hover {
+  background-color: #e6f4ff;
+  color: #003366 !important;
+}
+
+/* ---------------------------------- */
+/* OVERRIDE DEFAULT HYPERLINKS        */
+/* ---------------------------------- */
+
+/* Global link style override */
+a {
+  color: #0054a6;             /* NOAA blue */
+  text-decoration: none;      /* Removes underline */
+  font-weight: 500;           /* Optional: make it stand out a bit */
+}
+
+/* Hover behavior for all links */
+a:hover {
+  text-decoration: underline; /* Optional: show underline on hover */
+  color: #003366;             /* Darker blue on hover */
+}
+
+/* ---------------------------------- */
+/* HERO IMAGE CARD (Homepage banner) */
+/* ---------------------------------- */
+
+.image-card {
+  position: relative;                         /* allows layering */
+  height: 450px;                              /* height of banner */
+  border-radius: 12px;                        /* rounded corners */
+  overflow: hidden;                           /* hides overflow */
+  background-image: url('images/primary_productivity.png');
+  background-size: cover;                     /* stretch to fill */
+  background-position: center;                /* center the image */
+}
+
+.image-card::before {
+  content: "";                                /* creates overlay layer */
+  position: absolute;
+  inset: 0;                                   /* cover entire card */
+  background-color: rgba(0, 0, 0, 0.5);       /* dark transparent overlay */
+}
+
+/* ---------------------------------- */
+/* OVERLAY TEXT ON HERO IMAGE CARD   */
+/* ---------------------------------- */
+
+.overlay-card {
+  position: relative;                         /* stacks above ::before */
+  z-index: 2;                                 /* ensures it's on top */
+  padding: 2rem;
+  color: white;                               /* default text color */
+  display: flex;                              /* center content */
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+}
+
+.overlay-card h2 {
+  font-size: 1.6rem;                          /* headline size */
+  font-weight: 400;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.overlay-card p {
+  font-size: 1.125rem;                        /* paragraph size */
+  line-height: 1.6;                           /* improve readability */
+  margin-bottom: 1.5rem;
+  color: white;
+}
+
+/* ---------------------------------- */
+/* BUTTONS (Primary and Secondary)   */
+/* ---------------------------------- */
+
+.btn-primary,
+.btn-secondary {
+  display: inline-block;
+  padding: 0.6rem 1.2rem;                     /* button padding */
+  margin-right: 1rem;
+  border-radius: 8px;
+  font-size: 1rem;                            /* text size */
+  text-decoration: none;
+  background-color: #0271d2;                 /* NOAA blue */
+  color: white;
+  border: none;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.btn-primary:hover,
+.btn-secondary:hover {
+  background-color: #004785;                 /* darker on hover */
+  color: white;
+}
+
+/* ---------------------------------- */
+/* GENERAL PURPOSE CARD STYLING      */
+/* ---------------------------------- */
+
+.card {
+  background: white;                          /* card background */
+  border-radius: 0.75rem;                     /* rounded corners */
+  padding: 1.5rem;                            /* interior spacing */
+  box-shadow: 0 0 12px rgba(0,0,0,0.05);      /* subtle shadow */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 1rem;                            /* base text size */
+  line-height: 1.4;                           /* improve readability */
+}
+
+.card .btn-primary {
+  margin-top: auto;                           /* pushes button to bottom */
+  align-self: start;                          /* left-aligns button */
+}
+
+.card h3 {
+  font-size: 1.25rem;                         /* larger title */
+  font-weight: 700;                           /* bold */
+  color: #1a1a1a;                             /* dark grey */
+  margin-bottom: 0.5rem;                      /* spacing below title */
+}
+
+.card p {
+  margin-bottom: 1rem;                        /* spacing before button */
+  color: #333;                                /* medium-dark text */
+}
+
+/* ---------------------------------- */
+/* FILTER BUTTONS & PANELS           */
+/* ---------------------------------- */
+
+.filter-btn {
+  background: #e6e6e6;                        /* light grey background */
+  border: none;
+  border-radius: 5px;                         /* rounded corners */
+  padding: 0.5rem 1rem;                       /* button size */
+  margin-right: 0.5rem;
+  font-size: 0.95rem;
+  cursor: pointer;                            /* pointer on hover */
+}
+
+.filter-btn:hover {
+  background: #d0d0d0;                        /* slightly darker on hover */
+}
+
+.category-filter {
+  background-color: #f5f5f5;                  /* light background */
+  padding: 20px;                              /* spacing inside */
+  border-radius: 20px;                        /* rounded panel */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;                    /* center horizontally */
+  align-items: center;                        /* center vertically */
+  margin-bottom: 20px;
+  text-align: center;
+  line-height: 20px;
+  text-size-adjust: 100%;
+}
+
+.category-filter label {
+  font-size: 1rem;
+  display: inline-flex;                       /* keeps text and radio aligned */
+  align-items: center;
+  gap: 0.4rem;                                /* spacing between text and radio */
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 0;
+  margin: 0 0.75rem;                          /* horizontal spacing */
+  background: none;
+  border: none;
+  border-radius: 0;
+  line-height: 1;
+}
+
+.category-filter input[type="radio"] {
+  transform: scale(0.9);                      /* slightly smaller radio */
+}
+
+/* ---------------------------------- */
+/* DATA CATALOG TOGGLES & DROPDOWNS  */
+/* ---------------------------------- */
+
+td.title-toggle {
+  cursor: pointer;                           /* clickable cell */
+  color: #007bff;                            /* blue text */
+  text-decoration: underline;                /* looks like a link */
+}
+
+td.title-toggle:hover {
+  color: #0056b3;                            /* darker on hover */
+}
+
+.catalog-description {
+  padding: 1rem;
+  font-size: 0.95rem;                        /* readable size */
+  color: #444;                               /* dark grey */
+  background-color: #f9f9f9;                 /* soft background */
+  border-top: 1px solid #ddd;                /* separator line */
+}
+
+.erddap-select {
+  padding: 0.3rem;
+  font-size: 0.95rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;                    /* standard dropdown border */
+}
+
+.access-buttons {
+  text-align: center;                        /* center-aligns buttons in cell */
+}
+
+.access-dropdown {
+  width: 140px;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #fff;
+  background-color: #0271d2;                /* NOAA blue */
+  border: none;
+  appearance: none;
+  cursor: pointer;
+  text-align: center;
+
+  /* adds a downward arrow icon */
+  background-image: url("data:image/svg+xml,%3Csvg%20width%3D'12'%20height%3D'12'%20xmlns%3D'http%3A//www.w3.org/2000/svg'%3E%3Cpath%20d%3D'M2%204l4%204%204-4'%20stroke%3D'%23fff'%20fill%3D'none'%20stroke-width%3D'1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 0.6rem;
+}
+
+.access-dropdown:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(2, 113, 210, 0.3); /* blue focus ring */
+}
+
+.key-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.key-filters label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.key-filters select {
+  margin-left: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.95rem;
+}
+
+.filter-panel select.form-select {
+  font-size: 1rem;
+  padding: 0.6rem;
+  border-radius: 0.5rem;
+}
+
+.filter-panel label {
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.filter-panel hr {
+  border: none;
+  border-top: 2px solid #dee2e6;
+}
+.nav-tabs .nav-link.active {
+  background-color: #f8f9fa;
+  border-color: #dee2e6 #dee2e6 #fff;
+}
+
+/* ---------------------------------- */
+/* ACCORDIONS & DETAILS ELEMENTS     */
+/* ---------------------------------- */
+
+.full-width-accordion .accordion {
+  width: 100%;                               /* ensures full width container */
+}
+
+.full-width-accordion .accordion-item {
+  width: 100%;                               /* each accordion item spans full width */
+}
+
+.full-width-accordion .accordion-body {
+  max-width: 100%;                           /* remove any internal width restriction */
+}
+
+.full-width-accordion {
+  padding: 0;
+  margin: 0;                                 /* reset spacing */
+}
+
+/* Style for <details> and <summary> blocks */
+details {
+  background-color: #f8f9fa;                 /* matches Lux theme */
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #dee2e6;                 /* light border */
+  color: #212529;                            /* base text color */
+  font-size: 1.1rem;                         /* slightly larger text */
+}
+
+details summary {
+  color: #212529;
+  font-weight: 600;                          /* bold summary */
+  font-size: 1.2rem;
+  cursor: pointer;                           /* pointer cursor on hover */
+}
+
+details a {
+  color: #0d6efd;                            /* link color */
+  text-decoration: underline;                /* underline to indicate link */
+}
+
+details a:hover {
+  color: #0a58ca;                            /* hover color */
+  text-decoration: none;                     /* remove underline on hover */
+}
+
+
+.erddap-dropdown {
+  background-color: #f5f5f5;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+/* Blue on hover */
+.erddap-dropdown:hover {
+  background-color: #e8f3ff;
+}
+
+.erddap-card h3 {
+  color: #003366;
+  font-weight: bold;
+}
+
+.right-dropdowns summary {
+  color: #003366;
+  font-weight: bold;
+}
+
+.dropdown-heading {
+  font-size: 1.25rem;
+  color: #003366;
+}
+
+/* Remove the icon from all callouts */
+.callout .callout-icon-container {
+  display: none;
+}
+
+/* Optional: remove space where icon used to be */
+.callout .callout-title-container {
+  padding-left: 0.5rem;
+}
+
+/* Increase callout title font size */
+.callout .callout-header {
+  font-size: 1.25rem !important;
+  font-weight: 600;
+}
+
+/* Increase callout body (description) font size */
+.callout .callout-body {
+  font-size: 1.1rem !important;
+  line-height: 1.6;
+}
+
+.project-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;    /* or space-between, space-around */
+  gap: 1.5rem;
+  max-width: 1000px;          /* controls 3-up fit */
+  margin: 0 auto;
+}
+
+.project-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: white;
+  transition: box-shadow 0.2s ease;
+  text-align: center;
+  width: 300px;
+  cursor: pointer;
+}
+
+.project-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.project-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: contain;
+  object-position: center;
+  margin-top: -1.75rem;
+}
+
+.project-card h3 {
+  margin: 0.75rem 1rem 0.25rem;
+  font-size: 1.2rem;
+  margin-top: -1rem;
+}
+
+.project-card button {
+  margin: 0.5rem 1rem 1rem;
+  background: none;
+  border: none;
+  color: #0077b6;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ---------------------------------- */
+/* MODAL (Lightbox Image Viewer)     */
+/* ---------------------------------- */
+
+.modal {
+  display: none;                              /* hidden by default */
+  position: fixed;
+  z-index: 9999;                              /* highest layer */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding-top: 8rem;                          /* vertical spacing from top */
+  background-color: rgba(0, 0, 0, 0.6);       /* dark semi-transparent bg */
+  overflow-y: auto;                           /* scroll if needed */
+  box-sizing: border-box;                     /* include padding in size */
+}
+
+.modal-content {
+  background-color: white;
+  margin: auto;
+  padding: 2rem;
+  padding-top: 0 !important;                  /* override if necessary */
+  border-radius: 0.5rem;                      /* rounded corners */
+  max-width: 900px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); /* soft outer glow */
+  overflow: visible;                          /* prevent scroll inside */
+}
+
+.modal-content h2 {
+  margin-bottom: -2rem;                       /* reduce gap */
+}
+
+.close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: #888;                                /* muted grey */
+  font-size: 1.5rem;
+  cursor: pointer;                            /* clickable icon */
+}
+
+.modal.show {
+  display: block;                             /* makes modal visible */
+  animation: fadeIn 0.3s ease-in-out;         /* fade-in animation */
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-section {
+  margin-bottom: 0.5rem;                      /* vertical spacing */
+}
+
+.modal-section h4 {
+  margin-bottom: 0.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #003f5c;                             /* dark blue */
+}
+
+.modal-section p {
+  margin: 0;
+  line-height: 1.2;
+  font-size: 0.95rem;
+}
+
+.modal-columns {
+  display: grid;
+  grid-template-columns: 400px 400px;         /* 2-column layout */
+  gap: 2rem;                                  /* space between columns */
+  margin-top: 1rem;
+}
+
+.modal-column {
+  display: flex;
+  flex-direction: column;                     /* vertical stack */
+}
+
+.modal-column h4 {
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #003f5c;
+}
+
+.modal-column p {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+}
+
+.modal-column .btn {
+  margin-top: auto;
+  align-self: flex-end;                       /* right-align button */
+}
+
+.modal-top-image {
+  width: 400px;
+  height: auto;
+  border-radius: 4px;
+  margin-bottom: 0.25rem;
+  padding-top: 1.5rem;
+}
+
+/* ---------------------------------- */
+/* TUTORIAL GRID + CARD STYLING      */
+/* ---------------------------------- */
+
+.tutorial-grid {
+  display: flex;                              /* horizontal card layout */
+  flex-wrap: wrap;                            /* wrap to next line if needed */
+  gap: 2rem;                                  /* space between cards */
+  justify-content: center;                    /* center on page */
+  max-width: 1200px;                          /* container width */
+  margin: 0 auto;                             /* center in page */
+}
+
+.tutorial-card {
+  background: white;                          /* card bg */
+  border-radius: 10px;                        /* rounded corners */
+  padding: 1rem;
+  width: 350px;                               /* fixed card width */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);     /* subtle shadow */
+  display: flex;
+  flex-direction: column;
+}
+
+.tutorial-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;                          /* maintain aspect ratio */
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  cursor: zoom-in;                            /* indicates enlarging behavior */
+  transition: transform 0.2s ease;            /* smooth hover effect */
+}
+
+.tutorial-card img:hover {
+  transform: scale(1.02);                     /* slight zoom on hover */
+}
+
+.tags {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #555;                                 /* dark text */
+  background: #e0e7ff;                         /* light blue background */
+  padding: 0.3rem 0.5rem;                      /* pill shape */
+  border-radius: 5px;
+  margin-bottom: 0.5rem;
+  display: inline-block;                       /* makes it inline but block-like */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tutorial-card h3 {
+  font-size: 1rem;
+  margin: 0.5rem 0;
+  text-align: center;
+}
+
+.tutorial-card p {
+  font-size: 0.85rem;
+  color: #444;                                 /* dark gray */
+  margin: 0.25rem 0;
+}
+
+/* ---------------------------------- */
+/* STACKED INFO BLOCKS               */
+/* ---------------------------------- */
+
+.stacked-info {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.info-block {
+  padding: 2rem 4vw;                           /* add horizontal breathing room */
+  border-radius: 1rem;                         /* rounded edges */
+  box-shadow: none;
+  border-top: 1px solid #ddd;                 /* top separator */
+  border-bottom: 1px solid #ddd;              /* bottom separator */
+}
+
+.info-blue {
+  background-color: #eaf4fb;                  /* NOAA-like light blue */
+}
+
+.info-gray {
+  background-color: #f3f3f3;                  /* neutral background */
+}
+
+/* ----------------- */
+/* CONTACT US PAGE   */
+/* ----------------- */
+
+input, textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.95rem;
+}
+
+button.btn-primary {
+  background-color: #003366;
+  color: white;
+  padding: 0.5rem 1.25rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+button.btn-primary:hover {
+  background-color: #005da8;
+}
+
+
+/* ---------------------- */
+/*  ECOCAST   HOMEPAGE    */
+/* ---------------------- */
+
+.ecocast-hero {
+  text-align: right;
+  margin-bottom: 2rem;
+  position: relative;
+  margin-top: 1rem;
+}
+
+.hero-img {
+  width: 100%;
+  max-height: 400px;
+  display: block;
+  object-fit: cover;
+  border-radius: 0;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.image-caption {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #555;
+  margin-top: 0.25rem;
+  padding-right: 0.5rem;
+  display: block;
+}
+
+.ecocast-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.ecocast-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  text-align: left;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ecocast-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.ecocast-card h3 {
+  margin-top: 0;
+  text-transform: uppercase;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.btn-outline-primary {
+  margin-top: 1rem;
+  padding: 0.5rem 1.2rem;
+  border: 2px solid black;
+  text-transform: uppercase;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.btn-outline-primary:hover {
+  background-color: black;
+  color: white;
+}
+
+.callout-note.ecocast-dropdown {
+  border-left: 6px solid #0077c8;
+  background-color: #f9f9f9;
+}
+
+.callout-note.ecocast-dropdown .callout-header {
+  font-weight: 600;
+  color: black;
+}
+
+/* ---------------------- */
+/* ECOCAST ABOUT PAGE     */
+/* ---------------------- */
+
+/* EcoCast layout styles */
+.ecocast-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2em;
+  align-items: flex-start;
+  margin-bottom: 2em;
+}
+
+.ecocast-column {
+  flex: 1 1 0;
+  min-width: 300px; /* ensures stacking on narrow screens */
+}
+
+.ecocast-card {
+  background: #f8f9fa;
+  padding: 1em 1.25em;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.ecocast-card a {
+  color: #2b6da8; /* NOAA blue for links */
+  text-decoration: underline;
+}
+
+/* Ensure figures in EcoCast cards look clean */
+.ecocast-card img {
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  margin-bottom: 1em;
+}
+
+/* Replace boring bullets with custom ones */
+.ecocast-card ul {
+  list-style: none;        /* remove default bullets */
+  padding-left: 1.2em;     /* indent */
+}
+
+.ecocast-card ul li {
+  position: relative;
+  margin-bottom: 0.5em;
+}
+
+.ecocast-card ul li::before {
+  content: "◆";            
+  color: #2b6da8;          /* NOAA blue */
+  font-size: 0.8em;
+  position: absolute;
+  left: -1.2em;
+  top: 0.2em;
+}
+
+.ecocast-disclaimer {
+  background: #f1f3f5;     /* lighter gray */
+  padding: 1em 1.25em;
+  border-radius: 6px;
+  font-size: 0.85em;       /* slightly smaller text */
+  line-height: 1.5;
+  border-left: 4px solid #6c757d; /* accent bar */
+  margin-top: 2em;
+}
+.ecocast-disclaimer a {
+  color: #2b6da8; /* NOAA blue for links */
+  text-decoration: underline;
+}
+
+
+/* -------------------- */
+/* ECOCAST  BUTTONS     */
+/* -------------------- */
+
+/* Make summary look like a blue Bootstrap-style button */
+.ecocast-buttons summary {
+  display: inline-block;
+  background-color: #2b6da8; /* NOAA blue */
+  color: #fff;
+  padding: 0.5em 1em;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  border: none;
+}
+.ecocast-buttons summary:hover {
+  background-color: #244f7a; /* darker blue on hover */
+}
+
+/* Remove the ugly default <details> border and triangle */
+.ecocast-buttons {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+.ecocast-buttons summary::-webkit-details-marker {
+  display: none;
+}
+.ecocast-buttons summary::marker {
+  display: none;
+}
+
+/* ------------- */
+/* NOAA BLUE     */
+/* ------------- */
+
+.noaa-blue {
+  color: #2b6da8;
+}
+
+/* -------------------- */
+/* ECOCAST MAP FAQs     */
+/* -------------------- */
+
+/* Base collapsible card */
+.ecocast-faq {
+  margin-bottom: 1em;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  background: #f8f9fa;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+
+/* Summary = card header */
+.ecocast-faq summary {
+  cursor: pointer;
+  padding: 0.25em 0.5em;
+  font-weight: 600;
+  color: #2b6da8; /* NOAA blue */
+  background: #f0f6fa;
+  list-style: none; /* remove triangle marker */
+}
+
+.ecocast-faq summary::-webkit-details-marker,
+.ecocast-faq summary::marker {
+  display: none; /* hide disclosure triangle */
+}
+
+/* Content area = card body */
+.ecocast-faq[open] {
+  background: #fff;
+}
+
+.ecocast-faq[open] summary {
+  border-bottom: 1px solid #dee2e6;
+  background: #e9f3fb;
+}
+
+.ecocast-faq p,
+.ecocast-faq ul {
+  padding: 0.5em 0.75em;
+  margin: 0.25em 0;
+}
+
+/* ------------------ */
+/* CUSTOM BUTTONS     */
+/* ------------------ */
+
+.btn-noaa {
+  background-color: #2b6da8;   /* NOAA blue */
+  color: #fff !important;      /* force white text */
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  padding: 0.5em 1.25em;
+  text-transform: none;        /* prevent uppercase */
+  text-decoration: none !important; /* remove underline */
+  letter-spacing: normal;      /* reset spacing */
+}
+
+.btn-noaa:hover {
+  background-color: #244f7a;   /* darker NOAA blue */
+  color: #fff !important;      /* keep white text */
+  text-decoration: none !important; /* prevent underline on hover */
+}
