@@ -1,7 +1,45 @@
 ---
-title: "turtlewatch"
+title: "TurtleWatch"
+anchor-sections: false
+format:
+  html:
+    theme: lux
+    toc: false
+    page-layout: full
 ---
 
-This is a Quarto website.
+### *Supporting turtle conservation and sustainable fisheries with dynamic ocean management*
 
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+::: {.turtlewatch-hero}
+![](images/loggerhead.png){.hero-img}
+
+<span class="image-caption">Photo copyright: Ralph Pace • [Contact](https://www.ralphpace.com/) for use outside NOAA</span>
+:::
+
+---
+
+::: {.turtlewatch-card-grid}
+
+::: {.turtlewatch-card}
+### Turtle Bycatch Overview
+The TOTAL program brings together agencies, universities, and the fishing industry to reduce bycatch of endangered North Pacific loggerhead turtles, which migrate near California during warm seasons and risk unintended capture by commercial fisheries.
+
+[Learn More](background.qmd){.btn-noaa}
+:::
+
+::: {.turtlewatch-card}
+### Conservation Area Status
+The Pacific Loggerhead Conservation Area off Southern California closes to drift gillnet fishing when warm ocean conditions bring loggerheads into fishing grounds, with closure rules and real-time status available online.
+
+[Closure Rules](closure_rules.qmd){.btn-noaa}
+[Closure Status](closure_status.qmd){.btn-noaa}
+:::
+
+::: {.turtlewatch-card}
+### Historical Data Dashboard
+Historical data since 2003 provide sea surface temperature, anomalies, El Niño status, and closure history for the Pacific Loggerhead Conservation Area off Southern California.
+
+[View Data](data_dashboard.qmd){.btn-noaa}
+:::
+
+:::
