@@ -1,5 +1,55 @@
 ---
 title: "Closure Rules"
 format: html
+toc: false
+page-layout: full
+anchor-sections: false
 ---
 
+::: {.turtlewatch-columns}
+::: {.turtlewatch-column}
+## Loggerhead Conservation Area
+Higher than normal sea temperatures, like those observed during El Niño events, have been correlated with the presence of loggerheads in the waters off Southern California that overlap with California drift gillnet fishing grounds. The Pacific Loggerhead Conservation Area was created in 2003, and amended in 2007, to protect Pacific loggerhead turtles (Federal Register [72 FR 31756](https://www.federalregister.gov/documents/2007/06/08/E7-11124/fisheries-off-west-coast-states-highly-migratory-species-fisheries)). It is located south of Point Conception, CA, and east of 120° W. longitude.
+
+### Standing Closure Rule
+Within the conservation area, fishing with DGN gear is subject to closure from June 1 to August 31 if the following environmental conditions are met:
+
+- An El Niño event is occurring or is forecast to occur
+- El Niño conditions (warmer than normal waters) occur off Southern California.
+
+Sea surface temperature data from the third and second months prior to the month of the closure will be used to determine whether El Niño conditions are present off Southern California.
+
+Pacific Loggerhead Conservation Area closures:
+:::
+
+::: {.turtlewatch-column}
+![The Conservation Area encompasses U.S. waters of the Pacific Ocean off the Southern California coast that are within the black line to the coast.](images/conservation_area.png){fig-align="center" width="100%"}
+:::
+:::
+
+---
+
+::: {.turtlewatch-columns}
+::: {.turtlewatch-column}
+## Proposed New Bycatch Avoidance Tool
+The Temperature Observations To Avoid Loggerhead (TOTAL) tool was designed as an additional metric to guide the timing of the Loggerhead Conservation Area. The TOTAL tool consists of an indicator and a threshold (Welch et al. 2018). The indicator is a time-series of monthly temperature anomalies in the Southern California Bight smoothed by the preceding six months. The threshold is reference point, over which increased loggerhead bycatch has been demonstrated to occur.
+
+Each month, new temperature anomaly data are processed to extend the length of the indicator by one month. When the indicator is above the threshold, our analysis shows loggerheads are more likely to be present within the Loggerhead Conservation Area. When the indicator is below the threshold, loggerheads are less likely to be present, and fishing can occur with reduced bycatch risk.
+:::
+
+::: {.turtlewatch-column}
+![The bycatch indicator, based on water temperature measured for the preceding six months. The plot demonstrates the indicator's ability to avoid turtle interactions (red dots represent turtle sightings) if fisheries were closed when indicator values exceed the 0.77 threshold.](images/bycatch_avoidance_tool.png){fig-align="center" width="100%"}
+:::
+:::
+
+::: {.turtlewatch-card}
+## Additional Information
+
+<details class="turtlewatch-faq">
+    <summary><strong>References</strong></summary>
+
+- Welch et al. (2018) Environmental indicators to reduce loggerhead turtle bycatch offshore of Southern California. Ecological Indicators. 98 (2019) 657–664. [10.1016/j.ecolind.2018.11.001](https://www.sciencedirect.com/science/article/pii/S1470160X1830863X)
+
+</details>
+
+:::

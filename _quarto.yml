@@ -1,12 +1,17 @@
 project:
   type: website
   output-dir: docs
+  resources:
+    - environmental_conditions.csv
+    - closure_history.csv
 
 website:
   title: "TurtleWatch"
   navbar:
     right:
       - href: index.qmd
+        text: " "
+      - href: background.qmd
         text: Background
       - href: closure_rules.qmd
         text: Closure Rules

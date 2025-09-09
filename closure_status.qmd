@@ -1,5 +1,299 @@
 ---
 title: "Conservation Area Status"
 format: html
+toc: false
+page-layout: full
+anchor-sections: false
+---
+::: {.status-card}
+
+<div class="status-banner success">
+  <span class="status-text">No closure in effect</span>
+  <div class="status-date"></div>
+</div>
+  
+NMFS has reopened the Pacific Loggerhead Conservation Area (LCA) to fishing with drift gillnets (DGN). The LCA had been closed to DGN since June 1, 2024. *(Posted 8/1/2024)*  
+
+<small>
+*[Closure status provided by NOAA Fisheries West Coast Regional Office](https://www.westcoast.fisheries.noaa.gov/)*
+</small>
+
+:::
+
+::: {.status-card}
+### Environmental Conditions
+
+::: {.status-grid}
+
+
+::: {.status-subcard}
+
+#### El Niño: La Niña Watch {.subcard-title}
+*Updated: 14 August, 2025*
+
+**Forecast:**  
+ENSO-neutral is most likely through the late Northern Hemisphere summer 2025 (56% chance in August-October). Thereafter, a brief period of La Niña conditions is favored in the fall and early winter 2025-26 before reverting to ENSO-neutral.
+
+<small>*[NOAA’s Climate Prediction Center](https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml)*</small>
+
 ---
 
+#### Marine Heatwave (MHW) {.subcard-title}
+*Forecast period: Aug 2025 – Jul 2026*
+
+**Tropical/North Pacific:** 
+MHW likelihoods are low in the eastern tropical Pacific and along the North and South American west coasts through boreal fall (0-20% [0-20%]; medium-high confidence). In contrast, MHW likelihoods remain high in the central/western North Pacific (60-80% [30-60%]; low-medium confidence) and in the central/western South Pacific (40-60% [0-30%]; low-medium confidence).
+
+<small>*[NOAA’s Marine Heatwave Forecast](https://psl.noaa.gov/marine-heatwaves/#report)*</small>
+
+:::
+
+::: {.status-subcard}
+#### Closure Area Sea Temperature
+
+<div class="unit-toggle">
+<label><input type="radio" name="temp-unit" value="C" checked> °C</label>
+<label><input type="radio" name="temp-unit" value="F"> °F</label>
+</div>
+
+
+|        | Mar  | Apr  | May  | Jun  | Jul  | Aug  |
+|--------|------|------|------|------|------|------|
+| Temperature | 14.7 | 15.1 | 15.4 | 16.2 | 17.4 | 19.5 |
+| Anomaly     | 0.4  | 0.5  | 0.0  | -0.1  | -0.1 | 1.0 |
+
+<small>
+Recent and historical monthly sea surface temperatures within the Loggerhead sea turtle conservation area.  
+Dataset: [GHRSST MUR](https://coastwatch.pfeg.noaa.gov/erddap/search/index.html?page=1&itemsPerPage=1000&searchFor=mur+sst)
+</small>
+
+![Map of the Pacific Loggerhead Conservation Area (Loggerhead Closure). Map copyright: NOAA Fisheries](images/loggerhead_conservation.png){.lightbox width="60%"}
+
+:::
+
+
+:::
+:::
+
+::: {.status-card}
+### TOTAL Bycatch Avoidance Tool
+
+::: {.status-grid}
+
+
+::: {.status-subcard}
+
+#### TOTAL Time Series {.subcard-title}
+:::{.status-info}
+- **Most recent forecast:** September 2025  
+- **Status:** No Alert  
+- **Indicator value:** 0.11  
+- **Updated:** 04 Sep 2025  
+:::
+
+This year’s **Temperature Observations To Avoid Loggerhead (TOTAL)** values for the Loggerhead Conservation Area. An alert is indicated when indicator values (the timeseries) exceed a threshold of **0.77 (red horizontal line)**.
+
+![](https://coastwatch.pfeg.noaa.gov/elnino/dash/indicator_latest.png){fig-align="center"}
+:::
+
+:::
+:::
+
+::: {.status-card}
+### Monthly Sea Surface Maps
+
+::: {.status-grid}
+
+::: {.status-subcard}
+#### Sea Surface Temperature {.subcard-title}
+
+:::{.sst-slider}
+[‹ Previous]{.prev}
+[Next ›]{.next}
+
+![](https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_0.png){#sst-image}
+:::
+
+Monthly mean sea surface temperature off Southern California. The Pacific Loggerhead Conservation Area is located within the black lines and the coast. Use arrows to view the last six months of measurements. 
+
+Dataset: [GHRSST MUR](https://coastwatch.pfeg.noaa.gov/erddap/griddap/jplMURSST41mday.graph)
+
+:::
+
+::: {.status-subcard}
+#### Sea Surface Temperature Anomaly {.subcard-title}
+
+:::{.anom-slider}
+[‹ Previous]{.prev}
+[Next ›]{.next}
+
+![](https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_0.png){#anom-image}
+:::
+Monthly mean surface temperature anomaly (deviation from the average temperature) off Southern California. The Pacific Loggerhead Conservation Area is located within the black lines and the coast. Use arrows to view the last six months of measurements.
+
+Dataset: [GHRSST MUR](https://coastwatch.pfeg.noaa.gov/erddap/griddap/jplMURSST41anommday.graph)
+
+:::
+:::
+
+:::
+
+::: {.turtlewatch-disclaimer}
+The information on this page may be used and redistributed freely, but is not intended for legal use. Neither the data contributors, CoastWatch, NOAA SWFSC, nor any of their employees or contractors, makes any warranty, express or implied, including warranties of merchantability and fitness for a particular purpose, or assumes any legal liability for the accuracy, completeness, or usefulness of this information. For official information about El Niño/La Niña contact [NOAA's Climate Prediction Center](https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml). For official information about regulation of the drift gillnet (DGN) fishery contact [NOAA Fisheries West Coast Regional Office](https://www.westcoast.fisheries.noaa.gov/).
+:::
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const radios = document.querySelectorAll("input[name='temp-unit']");
+  const table = document.querySelector(".status-subcard table");
+
+  if (!table) return; // safety check
+
+  const rows = table.querySelectorAll("tbody tr");
+  const tempCells = rows[0].querySelectorAll("td");
+  const anomalyCells = rows[1].querySelectorAll("td");
+
+  // Store Celsius baseline values (skip labels in col[0])
+  const celsiusTemps = Array.from(tempCells).slice(1).map(td => parseFloat(td.textContent));
+  const celsiusAnoms = Array.from(anomalyCells).slice(1).map(td => parseFloat(td.textContent));
+
+  // Add initial anomaly coloring
+  Array.from(anomalyCells).slice(1).forEach((td, i) => {
+    const val = celsiusAnoms[i];
+    td.classList.add(val >= 0 ? "positive" : "negative");
+  });
+
+  // Toggle conversion
+  radios.forEach(radio => {
+    radio.addEventListener("change", () => {
+      if (radio.checked) {
+        Array.from(tempCells).slice(1).forEach((td, i) => {
+          if (radio.value === "C") {
+            td.textContent = celsiusTemps[i].toFixed(1);
+          } else {
+            const tempF = (celsiusTemps[i] * 9/5) + 32;
+            td.textContent = tempF.toFixed(1);
+          }
+        });
+
+        Array.from(anomalyCells).slice(1).forEach((td, i) => {
+          if (radio.value === "C") {
+            td.textContent = celsiusAnoms[i].toFixed(1);
+          } else {
+            const anomF = celsiusAnoms[i] * 9/5; // convert delta
+            td.textContent = anomF.toFixed(1);
+          }
+        });
+      }
+    });
+  });
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const images = [
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_0.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_1.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_2.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_3.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_4.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_5.png"
+  ];
+
+  let index = 0;
+  const imgEl = document.getElementById("sst-image");
+  const prevBtn = document.querySelector(".sst-slider .prev");
+  const nextBtn = document.querySelector(".sst-slider .next");
+
+  function updateImage() {
+    imgEl.src = images[index];
+    prevBtn.style.opacity = index === 0 ? 0.5 : 1;
+    nextBtn.style.opacity = index === images.length - 1 ? 0.5 : 1;
+  }
+
+  prevBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (index > 0) {
+      index--;
+      updateImage();
+    }
+  });
+
+  nextBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (index < images.length - 1) {
+      index++;
+      updateImage();
+    }
+  });
+
+  updateImage();
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const anomImages = [
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_0.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_1.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_2.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_3.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_4.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_5.png"
+  ];
+
+  let anomIndex = 0;
+  const anomImgEl = document.getElementById("anom-image");
+  const anomPrevBtn = document.querySelector(".anom-slider .prev");
+  const anomNextBtn = document.querySelector(".anom-slider .next");
+
+  function updateAnomImage() {
+    anomImgEl.src = anomImages[anomIndex];
+    anomPrevBtn.style.opacity = anomIndex === 0 ? 0.5 : 1;
+    anomNextBtn.style.opacity = anomIndex === anomImages.length - 1 ? 0.5 : 1;
+  }
+
+  anomPrevBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (anomIndex > 0) {
+      anomIndex--;
+      updateAnomImage();
+    }
+  });
+
+  anomNextBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (anomIndex < anomImages.length - 1) {
+      anomIndex++;
+      updateAnomImage();
+    }
+  });
+
+  updateAnomImage();
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const dateEl = document.querySelector(".status-date");
+  if (dateEl) {
+    const today = new Date();
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    dateEl.textContent = today.toLocaleDateString(undefined, options);
+  }
+});
+</script>

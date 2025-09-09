@@ -910,7 +910,7 @@ button.btn-primary:hover {
 .turtlewatch-faq {
   margin-bottom: 1em;
   border-radius: 8px;
-  border: 1px solid #dee2e6;
+  border: none
   background: #f8f9fa;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
   overflow: hidden;
@@ -947,6 +947,32 @@ button.btn-primary:hover {
   margin: 0.25em 0;
 }
 
+/* FAQ lists: use diamonds like cards */
+.turtlewatch-faq ul {
+  list-style: none;
+  padding-left: 1.2em;
+}
+
+.turtlewatch-faq ul li {
+  position: relative;
+  margin-bottom: 0.5em;
+}
+
+.turtlewatch-faq ul li::before {
+  content: "◆";            /* diamond shape */
+  color: #2b6da8;          /* NOAA blue */
+  font-size: 0.8em;
+  position: absolute;
+  left: -1.2em;
+  top: 0.2em;
+}
+
+/* FAQ hyperlinks: NOAA blue + underline */
+.turtlewatch-faq a {
+  color: #2b6da8;
+  text-decoration: underline;
+}
+
 /* ------------------ */
 /* CUSTOM BUTTONS     */
 /* ------------------ */
@@ -967,4 +993,544 @@ button.btn-primary:hover {
   background-color: #244f7a;   /* darker NOAA blue */
   color: #fff !important;      /* keep white text */
   text-decoration: none !important; /* prevent underline on hover */
+}
+
+/* -------------------- */
+/* Turtlewatch Forms    */
+/* -------------------- */
+
+.turtlewatch-form input,
+.turtlewatch-form select,
+.turtlewatch-form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.95rem;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.turtlewatch-form textarea {
+  resize: vertical; /* allow vertical resize only */
+}
+
+.turtlewatch-form button {
+  margin-right: 0.5rem;
+}
+
+/* --------------------------- */
+/*Conservation Status cards    */
+/* --------------------------- */
+
+/* Banner at top of card */
+.status-banner {
+  display: flex;
+  flex-direction: column;   /* stack vertically */
+  align-items: center;      /* center horizontally */
+  text-align: center;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.status-banner span {
+  text-transform: uppercase;   /* ALL CAPS */
+  font-size: 1.4rem;           /* larger text */
+  letter-spacing: 1px;         /* slight spacing for clarity */
+}
+
+.status-banner small {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: normal;
+  color: rgba(255,255,255,0.9);
+}
+
+/* Status color variants */
+.status-banner.success {
+  background: #2e8540;  /* NOAA green */
+}
+
+.status-banner.alert {
+  background: #d9534f;  /* NOAA red */
+}
+
+.status-banner.warning {
+  background: #f0ad4e;  /* NOAA orange */
+}
+
+.status-text {
+  text-transform: uppercase; 
+  font-size: 1.6rem;       /* larger headline */
+  margin-bottom: 0.25rem;
+}
+
+.status-date {
+  font-size: 1.1rem;       /* same or slightly smaller */
+  font-weight: 500;
+}
+
+/* Parent card */
+.status-card {
+  background: rgba(0,0,0,0.05);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Grid layout inside card */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.status-subcard {
+  background: #fff;                  /* light gray-blue */
+  padding: 1rem 1.25rem;
+  border: 2px solid #2b6da8;
+  border-radius: 8px;
+  margin-bottom: 1rem;                  /* space between sections */
+  box-shadow: 0 1px 3px #fff; /* subtle lift */
+}
+
+.status-subcard strong {
+  color: #003366;                       /* NOAA blue for key labels */
+  font-weight: bold;
+}
+
+/* Table styling */
+.status-subcard table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.status-subcard th {
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #e5e7eb;
+  padding: 0.5rem;
+}
+
+.status-subcard td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.status-subcard table tbody tr:nth-of-type(2) td {
+  font-weight: bold;
+  color: #d9534f;  /* NOAA red */
+}
+
+/* Small notes */
+.status-subcard small {
+  display: block;
+  margin-top: 0.5rem;
+  color: #666;
+  font-style: italic;
+}
+
+.status-subcard tr:nth-child(even) {
+  background: #f4f9fc; /* faint NOAA blue tint */
+}
+
+h4.subcard-title {
+  background: #2b6da8;   /* NOAA blue */
+  color: #fff;
+  padding: 0.4rem 0.75rem;
+  margin: 1rem 0 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+/* Container */
+.status-info {
+  list-style: none;         /* remove bullets */
+  padding: 0;
+  margin: 0 0 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.status-info ul {
+  list-style: none;   /* remove bullets */
+  padding: 0;
+  margin: 0;
+}
+
+.status-info li {
+  background: #f8f9fa;
+  border-left: 4px solid #2b6da8;  /* NOAA blue accent */
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;  /* spacing between rows */
+}
+
+/* ------------------------- */
+/* Temp Units Status Page    */
+/* ------------------------- */
+
+
+/* Header with toggle aligned right */
+.temp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #2b6da8; /* NOAA blue */
+}
+
+/* Toggle controls */
+.unit-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.unit-toggle input[type="radio"] {
+  margin-right: 0.25rem;
+  cursor: pointer;
+}
+
+.unit-toggle label {
+  cursor: pointer;
+  font-weight: normal;
+  color: #333;
+}
+
+/* -------------------- */
+/* SST Slider Images    */
+/* -------------------- */
+
+.sst-slider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sst-slider .prev,
+.sst-slider .next {
+  background: #2b6da8;  /* NOAA blue */
+  color: #fff;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 0 0.25rem;
+}
+
+.sst-slider .controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.sst-slider img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* ------------------------- */
+/* SST Anom Slider Images    */
+/* ------------------------- */
+
+.anom-slider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.anom-slider .prev,
+.anom-slider .next {
+  background: #2b6da8;
+  color: #fff;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 0 0.25rem;
+}
+
+.anom-slider img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* --------------- */
+/* Dashboard Page  */
+/* --------------- */
+
+#elnino-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+#elnino-table th,
+#elnino-table td {
+  border: 1px solid #dee2e6;   /* light gray borders */
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+#elnino-table th {
+  background: #2b6da8;   /* NOAA blue header */
+  color: #fff;
+  font-weight: 600;
+}
+
+#elnino-table tr:nth-child(even) {
+  background: #f8f9fa;   /* subtle striping */
+}
+
+td.positive {
+  color: #d9534f;   /* red */
+}
+
+td.negative {
+  color: blue;   /* NOAA blue */
+}
+
+/* Force only the anomaly cell to inherit the color */
+td.positive,
+td.negative {
+  font-weight: bold;
+}
+
+/* Reset color for other cells in the row */
+tr td:not(.positive):not(.negative) {
+  color: inherit;
+  font-weight: normal;
+}
+
+
+.dashboard-text {
+  text-transform: uppercase; 
+  font-size: 1.6rem;       /* larger headline */
+  margin-bottom: 0.25rem;
+}
+
+.dashboard-date {
+  font-size: 1.1rem;       /* same or slightly smaller */
+  font-weight: 500;
+}
+
+/* Parent card */
+.dashboard-card {
+  background: rgba(0,0,0,0.05);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Grid layout inside card */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.dashboard-subcard {
+  background: #fff;                  /* light gray-blue */
+  padding: 1rem 1.25rem;
+  border: 2px solid #2b6da8;
+  border-radius: 8px;
+  margin-bottom: 1rem;                  /* space between sections */
+  box-shadow: 0 1px 3px #fff; /* subtle lift */
+}
+
+.dashboard-subcard strong {
+  color: #003366;                       /* NOAA blue for key labels */
+  font-weight: bold;
+}
+
+/* Table styling */
+.dashboard-subcard table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.dashboard-subcard th {
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #e5e7eb;
+  padding: 0.5rem;
+}
+
+.dashboard-subcard td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Small notes */
+.dashboard-subcard small {
+  display: block;
+  margin-top: 0.5rem;
+  color: #666;
+  font-style: italic;
+}
+
+.dashboard-subcard tr:nth-child(even) {
+  background: #f4f9fc; /* faint NOAA blue tint */
+}
+
+h4.dashboard-title {
+  background: #2b6da8;   /* NOAA blue */
+  color: #fff;
+  padding: 0.4rem 0.75rem;
+  margin: 1rem 0 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+/* Container */
+.dashboard-info {
+  list-style: none;         /* remove bullets */
+  padding: 0;
+  margin: 0 0 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dashboard-info ul {
+  list-style: none;   /* remove bullets */
+  padding: 0;
+  margin: 0;
+}
+
+.dashboard-info li {
+  background: #f8f9fa;
+  border-left: 4px solid #2b6da8;  /* NOAA blue accent */
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;  /* spacing between rows */
+}
+
+/* ----------------------------- */
+/* SST Slider Images  Dashboard  */
+/* ----------------------------- */
+
+.sst-dash-slider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sst-dash-slider .prev,
+.sst-dash-slider .next {
+  background: #2b6da8;  /* NOAA blue */
+  color: #fff;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 0 0.25rem;
+}
+
+.sst-dash-slider .controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.sst-dash-slider img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* ---------------------------------- */
+/* SST Anom Slider Images Dashboard   */
+/* ---------------------------------- */
+
+.anom-dash-slider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.anom-dash-slider .prev,
+.anom-dash-slider .next {
+  background: #2b6da8;
+  color: #fff;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 0 0.25rem;
+}
+
+.anom-dash-slider img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* ----------------------- */
+/* Year Button Dashboard   */
+/* ----------------------- */
+
+.year-select-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+#year-select-input {
+  appearance: none;              /* remove default arrow */
+  background: #2b6da8;           /* NOAA blue */
+  color: #fff;
+  padding: 0.4rem 1.5rem 0.4rem 0.75rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1rem;
+}
+
+#year-select-input:hover {
+  background-color: #1e4d75;
 }
