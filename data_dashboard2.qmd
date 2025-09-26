@@ -1,0 +1,368 @@
+---
+title: "Data Dashboard"
+format: html
+toc: false
+page-layout: full
+anchor-sections: false
+---
+:::{.year-select-wrapper}
+**Select Year:**
+<select id="year-select-input">
+  <option value="2024" selected>2024</option>
+  <option value="2023">2023</option>
+  <option value="2022">2022</option>
+  <option value="2021">2021</option>
+  <option value="2020">2020</option>
+  <option value="2019">2019</option>
+  <option value="2018">2018</option>
+  <option value="2017">2017</option>
+  <option value="2016">2016</option>
+  <option value="2015">2015</option>
+  <option value="2014">2014</option>
+  <option value="2013">2013</option>
+  <option value="2012">2012</option>
+  <option value="2011">2011</option>
+  <option value="2010">2010</option>
+  <option value="2009">2009</option>
+  <option value="2008">2008</option>
+  <option value="2007">2007</option>
+  <option value="2006">2006</option>
+  <option value="2005">2005</option>
+  <option value="2004">2004</option>
+  <option value="2003">2003</option>
+</select>
+
+:::
+
+
+::: {.dashboard-card}
+### Closure History
+
+::: {.dashboard-grid}
+
+::: {.dashboard-subcard}
+#### Pacific Loggerhead Conservation Area Closures - <span id="closure-year">2024</span> Season {.dashboard-title}
+
+<p id="closure-text">Loading...</p>
+
+<small>
+*[Closure status provided by NOAA Fisheries West Coast Regional Office](https://www.westcoast.fisheries.noaa.gov/)
+</small>
+:::
+
+:::
+:::
+
+
+::: {.dashboard-card}
+### Environmental Conditions
+
+::: {.dashboard-grid}
+
+::: {.dashboard-subcard}
+#### El Niño Conditions and Coastal Water Temperatures - <span id="elnino-year">2024</span> Season {.dashboard-title}
+
+<div class="unit-toggle">
+<label><input type="radio" name="unit" value="C" checked> °C</label>
+<label><input type="radio" name="unit" value="F"> °F</label>
+</div>
+
+<table id="elnino-table">
+  <thead>
+    <tr>
+      <th>Month</th>
+      <th>El Niño Status</th>
+      <th>El Niño Forecast</th>
+      <th id="temp-header">SST (°C)</th>
+      <th id="anom-header">Anomaly (°C)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- rows will be filled by JS -->
+  </tbody>
+</table>
+:::
+
+:::
+:::
+
+
+::: {.dashboard-card}
+### TOTAL Bycatch Avoidance Tool
+
+::: {.dashboard-grid}
+
+::: {.dashboard-subcard}
+#### TOTAL Time Series – <span id="bycatch-year">2024</span> {.dashboard-title}
+
+<p id="bycatch-range">January – December 2024</p>
+
+**Temperature Observations To Avoid Loggerhead (TOTAL)** values for the Loggerhead Conservation Area.  
+An alert is indicated when indicator values (the time series) exceed a threshold of **0.77 (red horizontal line)**.
+
+![](https://coastwatch.pfeg.noaa.gov/elnino/dash/indicator_2024.png){#bycatch-img fig-align="center"}
+
+:::
+
+:::
+:::
+
+
+::: {.dashboard-card}
+### Monthly Sea Surface Maps
+
+::: {.dashboard-grid}
+
+::: {.dashboard-subcard}
+#### Sea Surface Temperature <span id="sst-year">2024</span> {.dashboard-title}
+
+:::{.sst-dash-slider}
+[‹ Previous]{.prev}
+[Next ›]{.next}
+
+![](https://coastwatch.pfeg.noaa.gov/elnino/dash/sst_20200316.png){#sst-dash-image}
+:::
+
+Monthly mean sea surface temperature off Southern California. The Pacific Loggerhead Conservation Area is located within the black lines and the coast. Use arrows to view the last six months of measurements.
+
+:::
+
+::: {.dashboard-subcard}
+#### Sea Surface Temperature Anomaly <span id="anom-year">2024</span> {.dashboard-title}
+
+:::{.anom-dash-slider}
+[‹ Previous]{.prev}
+[Next ›]{.next}
+
+![](https://coastwatch.pfeg.noaa.gov/elnino/dash/anom_20200316.png){#anom-dash-image}
+:::
+Monthly mean surface temperature anomaly (deviation from the average temperature) off Southern California. The loggerhead conservation area is located within the black lines and the coast. Use arrows to view the last six months of measurements.
+
+:::
+:::
+
+:::
+
+
+::: {.turtlewatch-disclaimer}
+The information on this page may be used and redistributed freely, but is not intended for legal use. Neither the data contributors, CoastWatch, NOAA SWFSC, nor any of their employees or contractors, makes any warranty, express or implied, including warranties of merchantability and fitness for a particular purpose, or assumes any legal liability for the accuracy, completeness, or usefulness of this information. For official information about El Niño/La Niña contact [NOAA's Climate Prediction Center](https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml). For official information about regulation of the drift gillnet (DGN) fishery contact [NOAA Fisheries West Coast Regional Office](https://www.westcoast.fisheries.noaa.gov/).
+:::
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // Year selector + unit toggle
+  const yearSelect   = document.getElementById("year-select-input");
+  const unitRadios   = document.querySelectorAll("input[name='unit']");
+  // ENSO table
+  const tableBody    = document.querySelector("#elnino-table tbody");
+  const tempHeader   = document.getElementById("temp-header");
+  const anomHeader   = document.getElementById("anom-header");
+  const elninoYear   = document.getElementById("elnino-year");
+  // Closure History card
+  const closureText  = document.getElementById("closure-text");
+  const closureYear  = document.getElementById("closure-year");
+  // Bycatch card
+  const bycatchYear  = document.getElementById("bycatch-year");
+  const bycatchRange = document.getElementById("bycatch-range");
+  const bycatchImg   = document.getElementById("bycatch-img");
+  // SST & Anomaly cards
+  const sstImgEl     = document.getElementById("sst-dash-image");
+  const sstPrevBtn   = document.querySelector(".sst-dash-slider .prev");
+  const sstNextBtn   = document.querySelector(".sst-dash-slider .next");
+  const anomImgEl    = document.getElementById("anom-dash-image");
+  const anomPrevBtn  = document.querySelector(".anom-dash-slider .prev");
+  const anomNextBtn  = document.querySelector(".anom-dash-slider .next");
+  // SST & Anomaly titles + captions
+  const sstYearTitle = document.getElementById("sst-year");
+  const anomYearTitle = document.getElementById("anom-year");
+  const sstCaption   = document.getElementById("sst-caption");
+  const anomCaption  = document.getElementById("anom-caption");
+  // Data holders
+  let allData = [];
+  let closureData = [];
+  let currentUnit = "C";
+  // Slider state
+  let sstImages = [];
+  let anomImages = [];
+  let sstIndex = 0;
+  let anomIndex = 0;
+  const monthsMap = {
+    "03": "March",
+    "04": "April",
+    "05": "May",
+    "06": "June",
+    "07": "July",
+    "08": "August"
+  };
+  // === Utility: Generate March–August image URLs for a given year ===
+  function getSSTImages(year) {
+    const months = ["03","04","05","06","07","08"];
+    return months.map(m => ({
+      url: `https://coastwatch.pfeg.noaa.gov/elnino/dash/sst_${year}${m}16.png`,
+      month: monthsMap[m]
+    }));
+  }
+  function getAnomImages(year) {
+    const months = ["03","04","05","06","07","08"];
+    return months.map(m => ({
+      url: `https://coastwatch.pfeg.noaa.gov/elnino/dash/anom_${year}${m}16.png`,
+      month: monthsMap[m]
+    }));
+  }
+  // === Load ENSO/SST CSV ===
+  Papa.parse("environmental_conditions.csv", {
+    download: true,
+    header: true,
+    complete: function(results) {
+      allData = results.data;
+      renderTable(yearSelect.value, currentUnit);
+    }
+  });
+  // === Load Closure CSV ===
+  Papa.parse("closure_history.csv", {
+    download: true,
+    header: true,
+    complete: function(results) {
+      closureData = results.data;
+      updateClosure(yearSelect.value);
+    }
+  });
+  // === ENSO Table ===
+  function renderTable(year, unit) {
+    const rows = allData.filter(row => row.year == year);
+    tableBody.innerHTML = "";
+    tempHeader.textContent = unit === "C" ? "Temp (°C)" : "Temp (°F)";
+    anomHeader.textContent = unit === "C" ? "Anomaly (°C)" : "Anomaly (°F)";
+    if (elninoYear) elninoYear.textContent = year;
+    rows.forEach(function(row) {
+      let tempC = parseFloat(row.temp);
+      let anomC = parseFloat(row.anomaly);
+      let temp = unit === "F" ? (tempC * 9/5) + 32 : tempC;
+      let anom = unit === "F" ? anomC * 9/5 : anomC;
+      const tr = document.createElement("tr");
+      [row.month, row.status, row.forecast, temp.toFixed(1)].forEach(val => {
+        const td = document.createElement("td");
+        td.textContent = val;
+        tr.appendChild(td);
+      });
+      const tdAnom = document.createElement("td");
+      tdAnom.textContent = anom.toFixed(1);
+      if (anom > 0) {
+        tdAnom.style.color = "red";
+        tdAnom.style.fontWeight = "bold";
+      } else if (anom < 0) {
+        tdAnom.style.color = "blue";
+        tdAnom.style.fontWeight = "bold";
+      }
+      tr.appendChild(tdAnom);
+      tableBody.appendChild(tr);
+    });
+  }
+  // === Closure Card ===
+  function updateClosure(year) {
+    const record = closureData.find(row => row.year == year);
+    if (closureYear) closureYear.textContent = year;
+    closureText.textContent = record
+      ? record.closure_status
+      : `No closure data available for ${year}.`;
+  }
+  // === Bycatch Card ===
+  function updateBycatch(year) {
+    if (bycatchYear) bycatchYear.textContent = year;
+    if (bycatchRange) bycatchRange.textContent = `January – December ${year}`;
+    if (bycatchImg)
+      bycatchImg.src = `https://coastwatch.pfeg.noaa.gov/elnino/dash/indicator_${year}.png`;
+  }
+  // === SST & Anomaly Cards ===
+  function updateSST() {
+    if (sstImgEl && sstImages.length > 0) {
+      const imgObj = sstImages[sstIndex];
+      sstImgEl.src = imgObj.url;
+      if (sstYearTitle) sstYearTitle.textContent = yearSelect.value;
+      if (sstCaption) sstCaption.textContent = `${imgObj.month} ${yearSelect.value}`;
+      if (sstPrevBtn) sstPrevBtn.style.opacity = sstIndex === 0 ? 0.5 : 1;
+      if (sstNextBtn) sstNextBtn.style.opacity = sstIndex === sstImages.length - 1 ? 0.5 : 1;
+    }
+  }
+  function updateAnom() {
+    if (anomImgEl && anomImages.length > 0) {
+      const imgObj = anomImages[anomIndex];
+      anomImgEl.src = imgObj.url;
+      if (anomYearTitle) anomYearTitle.textContent = yearSelect.value;
+      if (anomCaption) anomCaption.textContent = `${imgObj.month} ${yearSelect.value}`;
+      if (anomPrevBtn) anomPrevBtn.style.opacity = anomIndex === 0 ? 0.5 : 1;
+      if (anomNextBtn) anomNextBtn.style.opacity = anomIndex === anomImages.length - 1 ? 0.5 : 1;
+    }
+  }
+  // === Slider Event Listeners ===
+  if (sstPrevBtn && sstNextBtn) {
+    sstPrevBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (sstIndex > 0) {
+        sstIndex--;
+        updateSST();
+      }
+    });
+    sstNextBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (sstIndex < sstImages.length - 1) {
+        sstIndex++;
+        updateSST();
+      }
+    });
+  }
+  if (anomPrevBtn && anomNextBtn) {
+    anomPrevBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (anomIndex > 0) {
+        anomIndex--;
+        updateAnom();
+      }
+    });
+    anomNextBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (anomIndex < anomImages.length - 1) {
+        anomIndex++;
+        updateAnom();
+      }
+    });
+  }
+  // === Dropdown change ===
+  yearSelect.addEventListener("change", function() {
+    const year = yearSelect.value;
+    renderTable(year, currentUnit);
+    updateClosure(year);
+    updateBycatch(year);
+    sstImages = getSSTImages(year);
+    anomImages = getAnomImages(year);
+    sstIndex = 0;
+    anomIndex = 0;
+    updateSST();
+    updateAnom();
+  });
+  // === Unit toggle ===
+  unitRadios.forEach(radio => {
+    radio.addEventListener("change", function() {
+      if (this.checked) {
+        currentUnit = this.value;
+        renderTable(yearSelect.value, currentUnit);
+      }
+    });
+  });
+  // === Initial load ===
+  const initialYear = yearSelect.value;
+  renderTable(initialYear, currentUnit);
+  updateClosure(initialYear);
+  updateBycatch(initialYear);
+  sstImages = getSSTImages(initialYear);
+  anomImages = getAnomImages(initialYear);
+  sstIndex = 0;
+  anomIndex = 0;
+  updateSST();
+  updateAnom();
+});
+</script>

@@ -1,0 +1,63 @@
+name: Update TurtleWatch Data
+
+on:
+  schedule:
+    - cron: "0 12 * * *"   # every day at 12:00 UTC
+  workflow_dispatch:        # allow manual trigger from GitHub UI
+
+jobs:
+  update-total:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout your repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 3. Install Python dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas requests netCDF4 xarray beautifulsoup4 lxml matplotlib cartopy
+
+      # 4. Run orchestrator (indicator + maps)
+      - name: Run control script
+        run: python scripts/control_total_data_2025.py
+
+      # 5. Run heatwave scraper
+      - name: Run heatwave scraper
+        run: python scripts/update_heatwave_2025.py
+
+      # 6. Run ENSO scraper
+      - name: Run ENSO scraper
+        run: python scripts/scape_elnino_2025.py
+
+      # 7. Commit updated data to repo
+      - name: Commit and push updates
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add -A
+          git commit -m "Auto-update TurtleWatch data" || echo "No changes to commit"
+          git push
+
+      # 8. Install Quarto
+      - name: Install Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      # 9. Render Quarto site
+      - name: Render site
+        run: quarto render
+
+      # 10. Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: _site

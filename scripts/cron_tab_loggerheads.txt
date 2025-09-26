@@ -1,0 +1,6 @@
+# TOTAL loggerhead updates
+15 8 4,11,28 * * /home/cwatch/miniforge3/bin/python /home/cwatch/production/turtles_test/bin/update_heatwave_2025.py > /home/cwatch/production/turtles_test/logs/update_heatwave.log
+
+20 18 4,11,28 * * /home/cwatch/miniforge3/bin/python /home/cwatch/production/turtles_test/bin/scape_elnino_2025.py > /home/cwatch/production/turtles_test/logs/scape_elnino.log
+
+25 18 4,11,28 * * /home/cwatch/miniforge3/bin/python /home/cwatch/production/turtles_test/bin/control_total_data_2025.py > /home/cwatch/production/turtles_test/logs/control_total_data.log
