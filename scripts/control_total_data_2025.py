@@ -21,31 +21,25 @@ import sys
 import io
 
 def get_latest_erddap_date(session: requests.Session) -> datetime:
-    """Fetch the most recent data date from the ERDDAP server.
-
-    Uses ERDDAP's max(time) function instead of (last), since some clients
-    (like GitHub Actions) can hit 403 errors with the (last) shorthand.
+    """Fetches the most recent data date from the ERDDAP server.
 
     Args:
-        session (requests.Session): Active requests session.
+        session (requests.Session): The requests session object to use for the HTTP request.
 
     Returns:
         datetime: The datetime object of the most recent available data.
+
+    Raises:
+        requests.exceptions.RequestException: If the HTTP request fails.
+        pd.errors.ParserError: If the CSV data from the server cannot be parsed.
     """
     try:
-        url = (
-            "https://coastwatch.pfeg.noaa.gov/erddap/griddap/"
-            "jplMURSST41anommday.csv0?max(time)"
+        url_anom = session.get(
+            'https://coastwatch.pfeg.noaa.gov/erddap/griddap/jplMURSST41anommday.csv0?time[(last)]'
         )
-        resp = session.get(url)
-        resp.raise_for_status()
-
-        # ERDDAP returns a 1-row CSV with "max(time)" as the header
-        df = pd.read_csv(io.StringIO(resp.text))
-        latest_date = pd.to_datetime(df.iloc[0, 0])
-
-        return latest_date
-
+        url_anom.raise_for_status() # Raises an HTTPError if the response was an HTTP error
+        df = pd.read_csv(io.StringIO(url_anom.text))
+        return parse(df.columns[0])
     except (requests.exceptions.RequestException, pd.errors.ParserError) as e:
         print(f"Error fetching or parsing ERDDAP data: {e}", file=sys.stderr)
         sys.exit(1)
