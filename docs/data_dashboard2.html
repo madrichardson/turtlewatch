@@ -146,87 +146,129 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="el-niño-conditions" class="level3 dashboard-card">
-<h3 data-anchor-id="el-niño-conditions">El Niño Conditions</h3>
-<p><strong>Status:</strong> <span id="elnino-status">Loading…</span><br>
-<strong>Synopsis:</strong> <span id="elnino-synopsis">Loading…</span><br>
-<strong>Advisory Date:</strong> <span id="elnino-date">Loading…</span></p>
-<p><small><a href="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml">Data source: NOAA CPC ENSO Advisory</a></small></p>
+<section id="closure-history" class="level3 dashboard-card">
+<h3 data-anchor-id="closure-history">Closure History</h3>
+<div class="dashboard-grid">
+<section id="pacific-loggerhead-conservation-area-closures" class="level4 dashboard-title dashboard-subcard">
+<h4 class="dashboard-title" data-anchor-id="pacific-loggerhead-conservation-area-closures">Pacific Loggerhead Conservation Area Closures</h4>
+<p id="closure-text">
+Loading…
+</p>
+<p><small> <em><a href="https://www.westcoast.fisheries.noaa.gov/">Closure status provided by NOAA Fisheries West Coast Regional Office</a></em> </small></p>
 </section>
-<section id="marine-heatwave-conditions" class="level3 dashboard-card">
-<h3 data-anchor-id="marine-heatwave-conditions">Marine Heatwave Conditions</h3>
-<p><strong>Status:</strong> <span id="heatwave-status">Loading…</span><br>
-<strong>Forecast Date:</strong> <span id="heatwave-date">Loading…</span><br>
-<strong>Period:</strong> <span id="heatwave-period">Loading…</span></p>
-<p><small><a href="https://psl.noaa.gov/marine-heatwaves/">Data source: NOAA PSL Marine Heatwave Portal</a></small></p>
+</div>
 </section>
-<section id="total-bycatch-avoidance-indicator" class="level3 dashboard-card">
-<h3 data-anchor-id="total-bycatch-avoidance-indicator">TOTAL Bycatch Avoidance Indicator</h3>
-<p><strong>Latest Index Value:</strong> <span id="indicator-value">Loading…</span><br>
-<strong>Alert Status:</strong> <span id="indicator-alert">Loading…</span><br>
-<strong>Forecast Date:</strong> <span id="indicator-date">Loading…</span></p>
+<section id="environmental-conditions" class="level3 dashboard-card">
+<h3 data-anchor-id="environmental-conditions">Environmental Conditions</h3>
+<div class="dashboard-grid">
+<section id="el-niño-conditions" class="level4 dashboard-title dashboard-subcard">
+<h4 class="dashboard-title" data-anchor-id="el-niño-conditions">El Niño Conditions</h4>
+<div>
+<p><strong>Status:</strong> <span id="elnino-status">Loading…</span><br> <strong>Synopsis:</strong> <span id="elnino-synopsis">Loading…</span><br> <strong>Date:</strong> <span id="elnino-date">Loading…</span></p>
+</div>
+</section>
+<section id="marine-heatwaves" class="level4 dashboard-title dashboard-subcard">
+<h4 class="dashboard-title" data-anchor-id="marine-heatwaves">Marine Heatwaves</h4>
+<div>
+<p><strong>Status:</strong> <span id="heatwave-status">Loading…</span><br> <strong>Forecast Date:</strong> <span id="heatwave-date">Loading…</span><br> <strong>Period:</strong> <span id="heatwave-period">Loading…</span></p>
+</div>
+</section>
+</div>
+</section>
+<section id="total-bycatch-avoidance-tool" class="level3 dashboard-card">
+<h3 data-anchor-id="total-bycatch-avoidance-tool">TOTAL Bycatch Avoidance Tool</h3>
+<div class="dashboard-grid">
+<section id="total-indicator" class="level4 dashboard-title dashboard-subcard">
+<h4 class="dashboard-title" data-anchor-id="total-indicator">TOTAL Indicator</h4>
+<p>
+<strong>Latest Index:</strong> <span id="indicator-value">Loading…</span>
+</p>
+<p>
+<strong>Alert:</strong> <span id="indicator-alert">Loading…</span>
+</p>
+<p>
+<strong>Forecast Date:</strong> <span id="indicator-date">Loading…</span>
+</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="data/images/indicator_2024.png" id="indicator-plot" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+<p><img src="data/images/indicator.png" id="indicator-plot" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
 </figure>
 </div>
 </section>
-<section id="monthly-sea-surface-maps-last-6-months" class="level3 dashboard-card">
-<h3 data-anchor-id="monthly-sea-surface-maps-last-6-months">Monthly Sea Surface Maps (Last 6 Months)</h3>
-<p><strong>Sea Surface Temperature (SST):</strong><br>
-<img id="sst-map" alt="Latest SST Map" style="max-width: 100%;"></p>
-<p><strong>Sea Surface Temperature Anomaly:</strong><br>
-<img id="anom-map" alt="Latest Anomaly Map" style="max-width: 100%;"></p>
-<p><small>Maps show monthly mean SST and anomalies off Southern California. Loggerhead Conservation Area shown in black outline.</small></p>
+</div>
 </section>
+<section id="monthly-sea-surface-maps" class="level3 dashboard-card">
+<h3 data-anchor-id="monthly-sea-surface-maps">Monthly Sea Surface Maps</h3>
+<div class="dashboard-grid">
+<section id="sea-surface-temperature" class="level4 dashboard-title dashboard-subcard">
+<h4 class="dashboard-title" data-anchor-id="sea-surface-temperature">Sea Surface Temperature</h4>
+<p><img id="sst-map" alt="SST Map" style="max-width:100%;"></p>
+</section>
+<section id="sea-surface-temperature-anomaly" class="level4 dashboard-title dashboard-subcard">
+<h4 class="dashboard-title" data-anchor-id="sea-surface-temperature-anomaly">Sea Surface Temperature Anomaly</h4>
+<p><img id="anom-map" alt="SST Anomaly Map" style="max-width:100%;"></p>
+</section>
+</div>
+</section>
+<div class="turtlewatch-disclaimer">
+<p>The information on this page may be used and redistributed freely, but is not intended for legal use. Neither the data contributors, CoastWatch, NOAA SWFSC, nor any of their employees or contractors, makes any warranty, express or implied, including warranties of merchantability and fitness for a particular purpose, or assumes any legal liability for the accuracy, completeness, or usefulness of this information. For official information about El Niño/La Niña contact <a href="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml">NOAA’s Climate Prediction Center</a>. For official information about regulation of the drift gillnet (DGN) fishery contact <a href="https://www.westcoast.fisheries.noaa.gov/">NOAA Fisheries West Coast Regional Office</a>.</p>
+</div>
 <script>
 document.addEventListener("DOMContentLoaded", async function() {
-  // === Load ENSO advisory ===
+  // --- ENSO conditions ---
   try {
     const ensoResp = await fetch("data/json/elnino_last.json");
-    const ensoData = await ensoResp.json();
-    document.getElementById("elnino-status").textContent = ensoData.status;
-    document.getElementById("elnino-synopsis").textContent = ensoData.synopsis;
-    document.getElementById("elnino-date").textContent = ensoData.date_print;
+    const enso = await ensoResp.json();
+    document.getElementById("elnino-status").textContent = enso.status || "N/A";
+    document.getElementById("elnino-synopsis").textContent = enso.synopsis || "N/A";
+    document.getElementById("elnino-date").textContent = enso.date_print || "N/A";
   } catch (err) {
-    console.error("Error loading ENSO JSON:", err);
+    console.error("ENSO JSON not found:", err);
   }
 
-  // === Load Heatwave info ===
+  // --- Marine heatwaves ---
   try {
     const hwResp = await fetch("data/json/heatwave.json");
-    const hwData = await hwResp.json();
-    document.getElementById("heatwave-status").textContent = hwData.heat_status;
-    document.getElementById("heatwave-date").textContent = hwData.heat_date;
-    document.getElementById("heatwave-period").textContent = hwData.heat_period;
+    const hw = await hwResp.json();
+    document.getElementById("heatwave-status").textContent = hw.heat_status || "N/A";
+    document.getElementById("heatwave-date").textContent = hw.heat_date || "N/A";
+    document.getElementById("heatwave-period").textContent = hw.heat_period || "N/A";
   } catch (err) {
-    console.error("Error loading heatwave JSON:", err);
+    console.error("Heatwave JSON not found:", err);
   }
 
-  // === Load TOTAL indicator (latest index + alert) ===
+  // --- TOTAL indicator ---
   try {
-    const twResp = await fetch("data/json/web_data.json");
-    const twData = await twResp.json();
-    document.getElementById("indicator-alert").textContent = twData.alert;
-    document.getElementById("indicator-date").textContent = twData.fc_date;
-    document.getElementById("indicator-value").textContent = twData.new_index;
+    const indResp = await fetch("data/json/latest.json");
+    const ind = await indResp.json();
+    document.getElementById("indicator-alert").textContent = ind.alert || "N/A";
+    document.getElementById("indicator-date").textContent = ind.fc_date || "N/A";
+    document.getElementById("indicator-value").textContent = ind.new_index || "N/A";
   } catch (err) {
-    console.error("Error loading TOTAL JSON:", err);
+    console.error("Indicator JSON not found:", err);
   }
 
-  // === Load latest SST/Anomaly maps from latest.json ===
+  // --- Latest SST/Anomaly maps ---
   try {
     const mapsResp = await fetch("data/json/latest.json");
-    const mapsData = await mapsResp.json();
-    const latestKey = "t0"; // most recent month
-    if (mapsData[latestKey]) {
-      document.getElementById("sst-map").src =
-        "data/images/sst_" + mapsData[latestKey].date + ".png";
-      document.getElementById("anom-map").src =
-        "data/images/sstAnom_" + mapsData[latestKey].date + ".png";
+    const maps = await mapsResp.json();
+    const latest = maps["t0"]; // most recent month
+    if (latest) {
+      document.getElementById("sst-map").src = "data/images/" + latest.sst_file;
+      document.getElementById("anom-map").src = "data/images/" + latest.anom_file;
     }
   } catch (err) {
-    console.error("Error loading maps JSON:", err);
+    console.error("Maps JSON not found:", err);
+  }
+
+  // --- Closure history ---
+  try {
+    const closureResp = await fetch("data/json/closure.json");
+    const closure = await closureResp.json();
+    document.getElementById("closure-text").textContent =
+      closure.closure_status || "No closure data available.";
+  } catch (err) {
+    console.error("Closure JSON not found:", err);
   }
 });
 </script>
