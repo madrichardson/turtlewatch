@@ -20,24 +20,14 @@ import requests
 import sys
 import io
 
+
 def get_latest_erddap_date(session: requests.Session) -> datetime:
-    """Fetches the most recent data date from the ERDDAP server.
-
-    Args:
-        session (requests.Session): The requests session object to use for the HTTP request.
-
-    Returns:
-        datetime: The datetime object of the most recent available data.
-
-    Raises:
-        requests.exceptions.RequestException: If the HTTP request fails.
-        pd.errors.ParserError: If the CSV data from the server cannot be parsed.
-    """
+    """Fetches the most recent data date from the ERDDAP server."""
     try:
         url_anom = session.get(
-            'https://coastwatch.pfeg.noaa.gov/erddap/griddap/jplMURSST41anommday.csv0?time[(last)]'
+            "https://coastwatch.pfeg.noaa.gov/erddap/griddap/jplMURSST41anommday.csv0?time[(last)]"
         )
-        url_anom.raise_for_status() # Raises an HTTPError if the response was an HTTP error
+        url_anom.raise_for_status()
         df = pd.read_csv(io.StringIO(url_anom.text))
         return parse(df.columns[0])
     except (requests.exceptions.RequestException, pd.errors.ParserError) as e:
@@ -116,6 +106,14 @@ def main():
 
     latest_total_date = find_latest_file_date(RES_DIR, CONFIG["RESOURCE_FILE"])
     latest_map_date = find_latest_file_date(MAP_DIR, CONFIG["MAP_FILE_PREFIX"])
+
+    # --- Normalize timezone differences ---
+    if latest_erddap_date.tzinfo is not None:
+        latest_erddap_date = latest_erddap_date.replace(tzinfo=None)
+    if latest_total_date != datetime.min and latest_total_date.tzinfo is not None:
+        latest_total_date = latest_total_date.replace(tzinfo=None)
+    if latest_map_date != datetime.min and latest_map_date.tzinfo is not None:
+        latest_map_date = latest_map_date.replace(tzinfo=None)
 
     print(f"Most recent MUR data: {latest_erddap_date.strftime('%Y-%m')}")
     print(f"Most recent indicator: {latest_total_date.strftime('%Y-%m')}")
