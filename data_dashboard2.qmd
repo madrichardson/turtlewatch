@@ -6,21 +6,20 @@ page-layout: full
 anchor-sections: false
 ---
 
+:::{.year-select-wrapper}
+**Select Year:**
+<select id="year-select-input"></select>
+:::
+
 ::: {.dashboard-card}
 ### Closure History
 
 ::: {.dashboard-grid}
-
 ::: {.dashboard-subcard}
-#### Pacific Loggerhead Conservation Area Closures {.dashboard-title}
+#### Pacific Loggerhead Conservation Area – <span id="closure-year"></span> {.dashboard-title}
 
 <p id="closure-text">Loading...</p>
-
-<small>
-*[Closure status provided by NOAA Fisheries West Coast Regional Office](https://www.westcoast.fisheries.noaa.gov/)*
-</small>
 :::
-
 :::
 :::
 
@@ -28,7 +27,6 @@ anchor-sections: false
 ### Environmental Conditions
 
 ::: {.dashboard-grid}
-
 ::: {.dashboard-subcard}
 #### El Niño Conditions {.dashboard-title}
 
@@ -48,7 +46,6 @@ anchor-sections: false
 <strong>Period:</strong> <span id="heatwave-period">Loading...</span>
 </div>
 :::
-
 :::
 :::
 
@@ -56,16 +53,16 @@ anchor-sections: false
 ### TOTAL Bycatch Avoidance Tool
 
 ::: {.dashboard-grid}
-
 ::: {.dashboard-subcard}
-#### TOTAL Indicator {.dashboard-title}
+#### TOTAL Timeseries – <span id="indicator-year"></span> {.dashboard-title}
 
-<p><strong>Latest Index:</strong> <span id="indicator-value">Loading...</span></p>
-<p><strong>Alert:</strong> <span id="indicator-alert">Loading...</span></p>
-<p><strong>Forecast Date:</strong> <span id="indicator-date">Loading...</span></p>
+<p id="bycatch-range"></p>
+<p>
+Temperature Observations To Avoid Loggerhead (TOTAL) values for the Loggerhead Conservation Area.  
+An alert is indicated when indicator values (the timeseries) exceed a threshold of <strong>0.77</strong> (red horizontal line).
+</p>
 
-![](data/images/indicator.png){#indicator-plot fig-align="center"}
-
+<canvas id="indicator-chart" width="600" height="300"></canvas>
 :::
 :::
 :::
@@ -74,83 +71,174 @@ anchor-sections: false
 ### Monthly Sea Surface Maps
 
 ::: {.dashboard-grid}
-
 ::: {.dashboard-subcard}
 #### Sea Surface Temperature {.dashboard-title}
 
-<img id="sst-map" alt="SST Map" style="max-width:100%;">
+<div id="sst-gallery"></div>
 :::
 
 ::: {.dashboard-subcard}
 #### Sea Surface Temperature Anomaly {.dashboard-title}
 
-<img id="anom-map" alt="SST Anomaly Map" style="max-width:100%;">
+<div id="anom-gallery"></div>
 :::
-
 :::
 :::
 
 ::: {.turtlewatch-disclaimer}
-The information on this page may be used and redistributed freely, but is not intended for legal use. Neither the data contributors, CoastWatch, NOAA SWFSC, nor any of their employees or contractors, makes any warranty, express or implied, including warranties of merchantability and fitness for a particular purpose, or assumes any legal liability for the accuracy, completeness, or usefulness of this information. For official information about El Niño/La Niña contact [NOAA's Climate Prediction Center](https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml). For official information about regulation of the drift gillnet (DGN) fishery contact [NOAA Fisheries West Coast Regional Office](https://www.westcoast.fisheries.noaa.gov/).
+The information on this page may be used and redistributed freely, but is not intended for legal use. Neither the data contributors, CoastWatch, NOAA SWFSC, nor any of their employees or contractors, makes any warranty, express or implied, including warranties of merchantability and fitness for a particular purpose, or assumes any legal liability for the accuracy, completeness, or usefulness of this information.
 :::
 
 ```{=html}
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0"></script>
 <script>
 document.addEventListener("DOMContentLoaded", async function() {
-  // --- ENSO conditions ---
-  try {
-    const ensoResp = await fetch("data/json/elnino_last.json");
-    const enso = await ensoResp.json();
-    document.getElementById("elnino-status").textContent = enso.status || "N/A";
-    document.getElementById("elnino-synopsis").textContent = enso.synopsis || "N/A";
-    document.getElementById("elnino-date").textContent = enso.date_print || "N/A";
-  } catch (err) {
-    console.error("ENSO JSON not found:", err);
-  }
+  const yearSelect = document.getElementById("year-select-input");
 
-  // --- Marine heatwaves ---
+  // Load history JSONs
+  let ensoHist = {};
+  let hwHist = {};
   try {
-    const hwResp = await fetch("data/json/heatwave.json");
-    const hw = await hwResp.json();
-    document.getElementById("heatwave-status").textContent = hw.heat_status || "N/A";
-    document.getElementById("heatwave-date").textContent = hw.heat_date || "N/A";
-    document.getElementById("heatwave-period").textContent = hw.heat_period || "N/A";
-  } catch (err) {
-    console.error("Heatwave JSON not found:", err);
-  }
+    ensoHist = await (await fetch("data/json/elnino_history.json")).json();
+    hwHist   = await (await fetch("data/json/heatwave_history.json")).json();
+  } catch(e) { console.error("History JSON missing:", e); }
 
-  // --- TOTAL indicator ---
-  try {
-    const indResp = await fetch("data/json/latest.json");
-    const ind = await indResp.json();
-    document.getElementById("indicator-alert").textContent = ind.alert || "N/A";
-    document.getElementById("indicator-date").textContent = ind.fc_date || "N/A";
-    document.getElementById("indicator-value").textContent = ind.new_index || "N/A";
-  } catch (err) {
-    console.error("Indicator JSON not found:", err);
-  }
+  // Load loggerhead index (CSV)
+  const csvData = await new Promise(resolve => {
+    Papa.parse("data/resources/loggerhead_indx.csv", {
+      download: true,
+      header: true,
+      complete: r => resolve(r.data.filter(x => x.dateyrmo))
+    });
+  });
 
-  // --- Latest SST/Anomaly maps ---
-  try {
-    const mapsResp = await fetch("data/json/latest.json");
-    const maps = await mapsResp.json();
-    const latest = maps["t0"]; // most recent month
-    if (latest) {
-      document.getElementById("sst-map").src = "data/images/" + latest.sst_file;
-      document.getElementById("anom-map").src = "data/images/" + latest.anom_file;
-    }
-  } catch (err) {
-    console.error("Maps JSON not found:", err);
-  }
+  // Build year list
+  const years = [...new Set(csvData.map(r => r.dateyrmo.split("-")[0]))].sort().reverse();
+  years.forEach(y => {
+    const opt = document.createElement("option");
+    opt.value = y; opt.textContent = y;
+    yearSelect.appendChild(opt);
+  });
 
-  // --- Closure history ---
-  try {
-    const closureResp = await fetch("data/json/closure.json");
-    const closure = await closureResp.json();
+  yearSelect.addEventListener("change", () => updateDashboard(yearSelect.value));
+  updateDashboard(years[0]); // init with latest year
+
+  function updateDashboard(year) {
+    // --- Closure ---
+    const season = csvData.filter(r => {
+      const [yr, mo] = r.dateyrmo.split("-");
+      return yr === year && ["03","04","05","06","07","08"].includes(mo);
+    });
+    const mean = season.reduce((s,r) => s+parseFloat(r.indicator||0),0)/season.length;
+    const status = mean >= 0.77 ? "Closed" : "Open";
+    document.getElementById("closure-year").textContent = year;
     document.getElementById("closure-text").textContent =
-      closure.closure_status || "No closure data available.";
-  } catch (err) {
-    console.error("Closure JSON not found:", err);
+      `${status} (mean indicator = ${mean.toFixed(2)})`;
+
+    // --- ENSO ---
+    const ensoRec = Object.values(ensoHist).find(r => r.date_print.includes(year)) || null;
+    if (ensoRec) {
+      document.getElementById("elnino-status").textContent   = ensoRec.status;
+      document.getElementById("elnino-synopsis").textContent = ensoRec.synopsis;
+      document.getElementById("elnino-date").textContent     = ensoRec.date_print;
+    } else {
+      document.getElementById("elnino-status").textContent = "N/A";
+      document.getElementById("elnino-synopsis").textContent = "";
+      document.getElementById("elnino-date").textContent = "";
+    }
+
+    // --- Heatwave ---
+    const hwRec = Object.values(hwHist).find(r => r.heat_date.includes(year)) || null;
+    if (hwRec) {
+      document.getElementById("heatwave-status").textContent = hwRec.heat_status;
+      document.getElementById("heatwave-date").textContent   = hwRec.heat_date;
+      document.getElementById("heatwave-period").textContent = hwRec.heat_period;
+    } else {
+      document.getElementById("heatwave-status").textContent = "N/A";
+      document.getElementById("heatwave-date").textContent = "";
+      document.getElementById("heatwave-period").textContent = "";
+    }
+
+    // --- TOTAL indicator timeseries ---
+    const yearData = csvData.filter(r => r.dateyrmo.startsWith(year));
+    const months = yearData.map(r => r.dateyrmo);
+    const values = yearData.map(r => parseFloat(r.indicator || 0));
+
+    document.getElementById("indicator-year").textContent = year;
+    document.getElementById("bycatch-range").textContent = `January – December ${year}`;
+
+    const ctx = document.getElementById("indicator-chart").getContext("2d");
+    if (window.indChart) window.indChart.destroy();
+
+    window.indChart = new Chart(ctx, {
+      type: "scatter",
+      data: {
+        labels: months,
+        datasets: [{
+          label: "Indicator",
+          data: values.map((v, i) => ({ x: i+1, y: v })),
+          pointBackgroundColor: values.map(v => v >= 0.77 ? "red" : "black"),
+          pointBorderColor: values.map(v => v >= 0.77 ? "red" : "black"),
+          showLine: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            type: "linear",
+            min: 1,
+            max: 12,
+            ticks: {
+              stepSize: 1,
+              callback: (val) => {
+                const labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+                return labels[val-1];
+              }
+            },
+            title: { display: true, text: "Month" }
+          },
+          y: {
+            title: { display: true, text: "Indicator" }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          annotation: {
+            annotations: {
+              threshold: {
+                type: "line",
+                yMin: 0.77,
+                yMax: 0.77,
+                borderColor: "red",
+                borderWidth: 2,
+                label: {
+                  content: "Threshold 0.77",
+                  enabled: true,
+                  position: "end"
+                }
+              }
+            }
+          }
+        }
+      },
+      plugins: [Chart.registry.getPlugin("annotation")]
+    });
+
+    // --- Maps gallery ---
+    const monthsList = ["03","04","05","06","07","08"];
+    const sstGallery = document.getElementById("sst-gallery");
+    const anomGallery = document.getElementById("anom-gallery");
+    sstGallery.innerHTML = "";
+    anomGallery.innerHTML = "";
+    monthsList.forEach(mo => {
+      const sstImg = `data/images/sst_${year}${mo}16.png`;
+      const anomImg = `data/images/anom_${year}${mo}16.png`;
+      sstGallery.innerHTML += `<figure><img src="${sstImg}" style="max-width:100%;"><figcaption>${year}-${mo} SST</figcaption></figure>`;
+      anomGallery.innerHTML += `<figure><img src="${anomImg}" style="max-width:100%;"><figcaption>${year}-${mo} Anomaly</figcaption></figure>`;
+    });
   }
 });
 </script>
