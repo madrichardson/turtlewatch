@@ -5,6 +5,9 @@ on:
     - cron: "0 12 * * *"   # every day at 12:00 UTC
   workflow_dispatch:        # allow manual trigger from GitHub UI
 
+permissions:
+  contents: write           # allow pushing commits back to repo
+
 jobs:
   update-total:
     runs-on: ubuntu-latest
@@ -20,42 +23,51 @@ jobs:
         with:
           python-version: "3.11"
 
-      # 3. Install Python dependencies
-      - name: Install dependencies
+      # 3. Install system dependencies (for cartopy, netCDF, etc.)
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libproj-dev proj-data proj-bin \
+            libgeos-dev \
+            libnetcdf-dev
+
+      # 4. Install Python dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pandas requests netCDF4 xarray beautifulsoup4 lxml matplotlib cartopy
 
-      # 4. Run orchestrator (indicator + maps)
+      # 5. Run orchestrator (indicator + maps)
       - name: Run control script
         run: python scripts/control_total_data_2025.py
 
-      # 5. Run heatwave scraper
+      # 6. Run heatwave scraper
       - name: Run heatwave scraper
         run: python scripts/update_heatwave_2025.py
 
-      # 6. Run ENSO scraper
+      # 7. Run ENSO scraper
       - name: Run ENSO scraper
         run: python scripts/scape_elnino_2025.py
 
-      # 7. Commit updated data to repo
-      - name: Commit and push updates
+      # 8. Commit updated data to repo
+      - name: Commit updated data
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Auto-update TurtleWatch data" || echo "No changes to commit"
-          git push
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
 
-      # 8. Install Quarto
+      # 9. Install Quarto
       - name: Install Quarto
         uses: quarto-dev/quarto-actions/setup@v2
 
-      # 9. Render Quarto site
+      # 10. Render Quarto site
       - name: Render site
         run: quarto render
 
-      # 10. Deploy to GitHub Pages
+      # 11. Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
