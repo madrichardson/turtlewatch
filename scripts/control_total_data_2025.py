@@ -21,16 +21,33 @@ import sys
 import io
 
 def get_latest_erddap_date(session: requests.Session) -> datetime:
-    """Fetch the most recent available date from ERDDAP."""
+    """Fetch the most recent data date from the ERDDAP server.
+
+    Uses ERDDAP's max(time) function instead of (last), since some clients
+    (like GitHub Actions) can hit 403 errors with the (last) shorthand.
+
+    Args:
+        session (requests.Session): Active requests session.
+
+    Returns:
+        datetime: The datetime object of the most recent available data.
+    """
     try:
-        url_anom = session.get(
-            "https://coastwatch.pfeg.noaa.gov/erddap/griddap/jplMURSST41anommday.csv0?time[(last)]"
+        url = (
+            "https://coastwatch.pfeg.noaa.gov/erddap/griddap/"
+            "jplMURSST41anommday.csv0?max(time)"
         )
-        url_anom.raise_for_status()
-        df = pd.read_csv(io.StringIO(url_anom.text))
-        return parse(df.columns[0])
-    except Exception as e:
-        print(f"Error fetching ERDDAP date: {e}", file=sys.stderr)
+        resp = session.get(url)
+        resp.raise_for_status()
+
+        # ERDDAP returns a 1-row CSV with "max(time)" as the header
+        df = pd.read_csv(io.StringIO(resp.text))
+        latest_date = pd.to_datetime(df.iloc[0, 0])
+
+        return latest_date
+
+    except (requests.exceptions.RequestException, pd.errors.ParserError) as e:
+        print(f"Error fetching or parsing ERDDAP data: {e}", file=sys.stderr)
         sys.exit(1)
 
 
