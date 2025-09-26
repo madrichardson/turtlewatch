@@ -40,13 +40,26 @@ def parse_date_from_filename(filename: str) -> datetime:
 
 
 def find_latest_file_date(directory: Path, pattern: str) -> datetime:
-    """Find most recent file in directory that starts with pattern."""
+    """Find the most recent file date in a directory.
+
+    - If matching file is a CSV (e.g., loggerhead_indx.csv), use file modification time.
+    - Otherwise, assume the filename contains a YYYYMM starting at char 4
+      (e.g., sst_20250116.png → 2025-01).
+    """
     try:
         files = [f for f in directory.iterdir() if f.name.startswith(pattern)]
         if not files:
             return datetime.min
+
         latest_file = max(files, key=os.path.getmtime)
+
+        # Special case: CSV indicator file
+        if latest_file.suffix == ".csv":
+            return datetime.fromtimestamp(os.path.getmtime(latest_file))
+
+        # Default: parse from filename (sst_YYYYMM…)
         return parse_date_from_filename(latest_file.name)
+
     except Exception as e:
         print(f"Error finding latest file in {directory}: {e}", file=sys.stderr)
         return datetime.min
