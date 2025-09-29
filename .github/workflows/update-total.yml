@@ -1,75 +1,52 @@
-name: Update TurtleWatch Data
+name: Update TOTAL Dashboard
 
 on:
   schedule:
-    - cron: "0 12 * * *"   # every day at 12:00 UTC
-  workflow_dispatch:        # allow manual trigger from GitHub UI
-
-permissions:
-  contents: write           # allow pushing commits back to repo
+    - cron: "0 12 16 * *"   # run on the 16th of each month at 12:00 UTC
+  workflow_dispatch:         # manual trigger option
 
 jobs:
-  update-total:
+  update:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout your repository
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      # 2. Set up Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # 3. Install system dependencies (for cartopy, netCDF, etc.)
-      - name: Install system dependencies
+      - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libproj-dev proj-data proj-bin \
-            libgeos-dev \
-            libnetcdf-dev
+          pip install pandas numpy netCDF4 requests python-dateutil matplotlib cartopy beautifulsoup4 lxml
 
-      # 4. Install Python dependencies
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pandas requests netCDF4 xarray beautifulsoup4 lxml matplotlib cartopy
+      - name: Run TOTAL update controller
+        run: python scripts/controller_total_update.py
 
-      # 5. Run orchestrator (indicator + maps)
-      - name: Run control script
-        run: python scripts/control_total_data_2025.py
+      - name: Scrape ENSO status
+        run: python scripts/scrape_cpc_enso.py
 
-      # 6. Run heatwave scraper
-      - name: Run heatwave scraper
-        run: python scripts/update_heatwave_2025.py
+      - name: Scrape Heatwave status
+        run: python scripts/scrape_heatwave.py
 
-      # 7. Run ENSO scraper
-      - name: Run ENSO scraper
-        run: python scripts/scape_elnino_2025.py
-
-      # 8. Commit updated data to repo
-      - name: Commit updated data
+      - name: Commit updated data & images
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Auto-update TurtleWatch data" || echo "No changes to commit"
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/json/*.json data/images/*.png resources/*.csv
+          git commit -m "Automated TOTAL data update" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 9. Install Quarto
-      - name: Install Quarto
-        uses: quarto-dev/quarto-actions/setup@v2
-
-      # 10. Render Quarto site
-      - name: Render site
-        run: quarto render
-
-      # 11. Deploy to GitHub Pages
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Render Quarto site
+        uses: quarto-dev/quarto-actions/render@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: _site
+          to: html
+
+      - name: Deploy to GitHub Pages
+        uses: quarto-dev/quarto-actions/publish@v2
+        with:
+          target: gh-pages
