@@ -8,7 +8,8 @@ anchor-sections: false
 :::{.year-select-wrapper}
 **Select Year:**
 <select id="year-select-input">
-  <option value="2024" selected>2024</option>
+  <option value="2025" selected>2025</option>
+  <option value="2024">2024</option>
   <option value="2023">2023</option>
   <option value="2022">2022</option>
   <option value="2021">2021</option>
@@ -41,7 +42,7 @@ anchor-sections: false
 ::: {.dashboard-grid}
 
 ::: {.dashboard-subcard}
-#### Pacific Loggerhead Conservation Area Closures - <span id="closure-year">2024</span> Season {.dashboard-title}
+#### Pacific Loggerhead Conservation Area Closures - <span id="closure-year">2025</span> Season {.dashboard-title}
 
 <p id="closure-text">Loading...</p>
 
@@ -60,7 +61,7 @@ anchor-sections: false
 ::: {.dashboard-grid}
 
 ::: {.dashboard-subcard}
-#### El Niño Conditions and Coastal Water Temperatures - <span id="elnino-year">2024</span> Season {.dashboard-title}
+#### El Niño Conditions and Coastal Water Temperatures - <span id="elnino-year">2025</span> Season {.dashboard-title}
 
 <div class="unit-toggle">
 <label><input type="radio" name="unit" value="C" checked> °C</label>
@@ -93,9 +94,9 @@ anchor-sections: false
 ::: {.dashboard-grid}
 
 ::: {.dashboard-subcard}
-#### TOTAL Time Series – <span id="bycatch-year">2024</span> {.dashboard-title}
+#### TOTAL Time Series – <span id="bycatch-year">2025</span> {.dashboard-title}
 
-<p id="bycatch-range">January – December 2024</p>
+<p id="bycatch-range">January – December 2025</p>
 
 **Temperature Observations To Avoid Loggerhead (TOTAL)** values for the Loggerhead Conservation Area.  
 An alert is indicated when indicator values (the time series) exceed a threshold of **0.77 (red horizontal line)**.
@@ -114,7 +115,7 @@ An alert is indicated when indicator values (the time series) exceed a threshold
 ::: {.dashboard-grid}
 
 ::: {.dashboard-subcard}
-#### Sea Surface Temperature <span id="sst-year">2024</span> {.dashboard-title}
+#### Sea Surface Temperature <span id="sst-year">2025</span> {.dashboard-title}
 
 :::{.sst-dash-slider}
 [‹ Previous]{.prev}
@@ -128,7 +129,7 @@ Monthly mean sea surface temperature off Southern California. The Pacific Logger
 :::
 
 ::: {.dashboard-subcard}
-#### Sea Surface Temperature Anomaly <span id="anom-year">2024</span> {.dashboard-title}
+#### Sea Surface Temperature Anomaly <span id="anom-year">2025</span> {.dashboard-title}
 
 :::{.anom-dash-slider}
 [‹ Previous]{.prev}
