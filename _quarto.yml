@@ -4,6 +4,9 @@ project:
   resources:
     - environmental_conditions.csv
     - closure_history.csv
+    - data/images/**
+    - data/json/**
+    - data/resources/**
 
 website:
   title: "TurtleWatch"
