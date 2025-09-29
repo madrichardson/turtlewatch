@@ -26,10 +26,10 @@ jobs:
         run: python scripts/control_total_data_2025.py
 
       - name: Scrape ENSO status
-        run: python scripts/scrape_cpc_enso.py
+        run: python scripts/scape_elnino_2025.py
 
       - name: Scrape Heatwave status
-        run: python scripts/scrape_heatwave.py
+        run: python scripts/update_heatwave_2025.py
 
       - name: Commit updated data & images
         run: |
@@ -50,3 +50,6 @@ jobs:
         uses: quarto-dev/quarto-actions/publish@v2
         with:
           target: gh-pages
+
+
+
