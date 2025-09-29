@@ -194,7 +194,7 @@ def main():
     
     # Define paths
     ROOT_DIR = CONFIG['BASE_DIR']
-    RES_DIR = ROOT_DIR / 'resources'
+    RES_DIR = ROOT_DIR / 'data' / 'resources'
     JSON_DIR = ROOT_DIR / 'data' / 'json'
     WORK_DIR = ROOT_DIR / 'work'
     
