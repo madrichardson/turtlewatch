@@ -81,6 +81,21 @@ def find_latest_file_date(directory: Path, pattern: str) -> datetime:
         print(f"Error finding latest file in {directory}: {e}", file=sys.stderr)
         return datetime.min
 
+def get_latest_indicator_date(csv_path: Path) -> datetime:
+    """Return the most recent date from the loggerhead indicator CSV."""
+    try:
+        df = pd.read_csv(csv_path)
+        if "dateyrmo" not in df.columns or df.empty:
+            print("CSV has no dateyrmo column or is empty.", file=sys.stderr)
+            return datetime.min
+        # sort just in case rows are out of order
+        df = df.sort_values(by=["dateyrmo"])
+        latest_str = str(df["dateyrmo"].iloc[-1])  # e.g. "2025-08"
+        return parse(latest_str).replace(tzinfo=None)
+    except Exception as e:
+        print(f"Error reading indicator CSV {csv_path}: {e}", file=sys.stderr)
+        return datetime.min
+
 # Define a function to run a script with subprocess
 def run_script(python_path: Path, script_path: Path, args: list = []) -> bool:
     """Runs a Python script and returns its success status.
@@ -136,7 +151,7 @@ def main():
     with requests.Session() as session:
         latest_erddap_date = get_latest_erddap_date(session)
 
-    latest_total_date = find_latest_file_date(RES_DIR, CONFIG['RESOURCE_FILE'])
+    latest_total_date = get_latest_indicator_date(RES_DIR, CONFIG['RESOURCE_FILE'])
     latest_map_date = find_latest_file_date(MAP_DIR, CONFIG['MAP_FILE_PREFIX'])
     
     print(f"Most recent MUR data: {latest_erddap_date.strftime('%Y-%m')}")
