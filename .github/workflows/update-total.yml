@@ -24,7 +24,20 @@ jobs:
       - name: Install dependencies
         run: |
           pip install pandas numpy netCDF4 requests python-dateutil matplotlib cartopy beautifulsoup4 lxml
+     
+      - name: Setup Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
 
+      - name: Render Quarto site
+        uses: quarto-dev/quarto-actions/render@v2
+        with:
+          to: html
+
+      - name: Publish to GitHub pages
+        uses: quarto-dev/quarto-actions/publish@v2
+        with:
+          target: gh-pages
+   
       - name: Run TOTAL update controller
         run: python scripts/control_total_data_2025.py
 
