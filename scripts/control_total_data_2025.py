@@ -151,7 +151,7 @@ def main():
     with requests.Session() as session:
         latest_erddap_date = get_latest_erddap_date(session)
 
-    latest_total_date = get_latest_indicator_date(RES_DIR, CONFIG['RESOURCE_FILE'])
+    latest_total_date = get_latest_indicator_date(RES_DIR / CONFIG['RESOURCE_FILE'])
     latest_map_date = find_latest_file_date(MAP_DIR, CONFIG['MAP_FILE_PREFIX'])
     
     print(f"Most recent MUR data: {latest_erddap_date.strftime('%Y-%m')}")
