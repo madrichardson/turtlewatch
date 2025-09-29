@@ -35,7 +35,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/json/*.json data/images/*.png resources/*.csv
+          git add data/json/*.json data/images/*.png data/resources/*.csv
           git commit -m "Automated TOTAL data update" || echo "No changes to commit"
           git push
         env:
