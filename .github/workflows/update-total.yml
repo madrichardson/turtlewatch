@@ -23,7 +23,7 @@ jobs:
           pip install pandas numpy netCDF4 requests python-dateutil matplotlib cartopy beautifulsoup4 lxml
 
       - name: Run TOTAL update controller
-        run: python scripts/controller_total_update.py
+        run: python scripts/control_total_data_2025.py
 
       - name: Scrape ENSO status
         run: python scripts/scrape_cpc_enso.py
