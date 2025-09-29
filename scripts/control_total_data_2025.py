@@ -130,7 +130,7 @@ def main():
     }
 
     BIN_DIR = CONFIG['ROOT_DIR'] / 'scripts'
-    RES_DIR = CONFIG['ROOT_DIR'] / 'resources'
+    RES_DIR = CONFIG['ROOT_DIR'] / 'data' / 'resources'
     MAP_DIR = CONFIG['ROOT_DIR'] / 'data' / 'images'
 
     with requests.Session() as session:
