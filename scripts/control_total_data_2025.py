@@ -20,55 +20,81 @@ import requests
 import sys
 import io
 
-
+# Define a function to get the latest available date from ERDDAP
 def get_latest_erddap_date(session: requests.Session) -> datetime:
-    """Fetches the most recent data date from the ERDDAP server."""
+    """Fetches the most recent data date from the ERDDAP server.
+
+    Args:
+        session (requests.Session): The requests session object to use for the HTTP request.
+
+    Returns:
+        datetime: The datetime object of the most recent available data.
+
+    Raises:
+        requests.exceptions.RequestException: If the HTTP request fails.
+        pd.errors.ParserError: If the CSV data from the server cannot be parsed.
+    """
     try:
         url_anom = session.get(
-            "https://coastwatch.pfeg.noaa.gov/erddap/griddap/jplMURSST41anommday.csv0?time[(last)]"
+            'https://coastwatch.pfeg.noaa.gov/erddap/griddap/jplMURSST41anommday.csv0?time[(last)]'
         )
-        url_anom.raise_for_status()
+        url_anom.raise_for_status() # Raises an HTTPError if the response was an HTTP error
         df = pd.read_csv(io.StringIO(url_anom.text))
         return parse(df.columns[0])
     except (requests.exceptions.RequestException, pd.errors.ParserError) as e:
         print(f"Error fetching or parsing ERDDAP data: {e}", file=sys.stderr)
         sys.exit(1)
 
-
+# Define a function to parse a date from a filename
 def parse_date_from_filename(filename: str) -> datetime:
-    """Extract YYYYMM from a filename like sst_202301_..."""
+    """Parses a YYYYMM date from a filename.
+
+    Assumes a format like 'sst_202301_...'.
+
+    Args:
+        filename (str): The name of the file to parse.
+
+    Returns:
+        datetime: The parsed datetime object.
+    """
     return parse(filename[4:12])
 
-
+# Define a function to find the most recent file in a directory
 def find_latest_file_date(directory: Path, pattern: str) -> datetime:
-    """Find the most recent file date in a directory.
+    """Finds the date of the most recent file matching a pattern.
 
-    - If matching file is a CSV (e.g., loggerhead_indx.csv), use file modification time.
-    - Otherwise, assume the filename contains a YYYYMM starting at char 4
-      (e.g., sst_20250116.png → 2025-01).
+    Args:
+        directory (Path): The directory to search within.
+        pattern (str): The filename pattern to match (e.g., 'sst_2').
+
+    Returns:
+        datetime: The datetime object of the most recently modified file,
+                  or `datetime.min` if no matching files are found or an error occurs.
     """
     try:
         files = [f for f in directory.iterdir() if f.name.startswith(pattern)]
         if not files:
             return datetime.min
-
         latest_file = max(files, key=os.path.getmtime)
-
-        # Special case: CSV indicator file
-        if latest_file.suffix == ".csv":
-            return datetime.fromtimestamp(os.path.getmtime(latest_file))
-
-        # Default: parse from filename (sst_YYYYMM…)
         return parse_date_from_filename(latest_file.name)
-
     except Exception as e:
         print(f"Error finding latest file in {directory}: {e}", file=sys.stderr)
         return datetime.min
 
+# Define a function to run a script with subprocess
+def run_script(python_path: Path, script_path: Path, args: list = []) -> bool:
+    """Runs a Python script and returns its success status.
 
-def run_script(script_path: Path, args: list = []) -> bool:
-    """Run a Python script via subprocess."""
-    cmd = [sys.executable, str(script_path)] + args
+    Args:
+        python_path (Path): The path to the Python interpreter.
+        script_path (Path): The path to the script to execute.
+        args (list, optional): A list of command-line arguments to pass to the script.
+                               Defaults to an empty list.
+
+    Returns:
+        bool: True if the script ran successfully, False otherwise.
+    """
+    cmd = [str(python_path), str(script_path)] + args
     print(f"Executing: {' '.join(cmd)}")
     try:
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
@@ -76,64 +102,69 @@ def run_script(script_path: Path, args: list = []) -> bool:
         print("STDERR:", result.stderr)
         return True
     except subprocess.CalledProcessError as e:
-        print(f"Script failed with exit code {e.returncode}", file=sys.stderr)
+        print(f"Script failed with exit code {e.returncode}.", file=sys.stderr)
         print("Error details:", e.stderr, file=sys.stderr)
     except FileNotFoundError:
-        print(f"Script not found: {cmd[1]}", file=sys.stderr)
+        print(f"Python interpreter or script not found: {cmd[0]}.", file=sys.stderr)
     return False
 
-
 def main():
-    """Control monthly updates to TOTAL data output."""
+    """Controls and coordinates monthly updates to the TOTAL data output.
+
+    This function fetches the latest data date from the ERDDAP server,
+    compares it against the dates of local data files, and triggers
+    subordinate scripts to update the necessary components if new data is available.
+    """
+    # Configuration
     CONFIG = {
-        "ROOT_DIR": Path(__file__).resolve().parents[1],
-        "SCRIPTS": {
-            "total_py": "update_total_indicator_2025.py",
-            "plot_py": "plot_total_tool_2025.py",
-            "maps_py": "make_monthly_maps_2025.py",
+        'ROOT_DIR': Path(__file__).resolve().parents[1],
+        'ERDDAP_URL': 'https://coastwatch.pfeg.noaa.gov/erddap/griddap',
+        'PYTHON_PATH': Path(sys.executable),
+        'SCRIPTS': {
+            'total_py': 'update_total_indicator_2025.py',
+            'plot_py': 'plot_total_tool_2025.py',
+            'maps_py': 'make_monthly_maps_2025.py'
         },
-        "RESOURCE_FILE": "loggerhead_indx.csv",
-        "MAP_FILE_PREFIX": "sst_2",
+        'RESOURCE_FILE': 'loggerhead_indx.csv',
+        'MAP_FILE_PREFIX': 'sst_2'
     }
 
-    ROOT_DIR = CONFIG["ROOT_DIR"]
-    BIN_DIR = ROOT_DIR / "scripts"
-    RES_DIR = ROOT_DIR / "data" / "resources"
-    MAP_DIR = ROOT_DIR / "data" / "images"
+    BIN_DIR = CONFIG['ROOT_DIR'] / 'scripts'
+    RES_DIR = CONFIG['ROOT_DIR'] / 'resources'
+    MAP_DIR = CONFIG['ROOT_DIR'] / 'data' / 'images'
 
     with requests.Session() as session:
         latest_erddap_date = get_latest_erddap_date(session)
 
-    latest_total_date = find_latest_file_date(RES_DIR, CONFIG["RESOURCE_FILE"])
-    latest_map_date = find_latest_file_date(MAP_DIR, CONFIG["MAP_FILE_PREFIX"])
-
-    # --- Normalize timezone differences ---
-    if latest_erddap_date.tzinfo is not None:
-        latest_erddap_date = latest_erddap_date.replace(tzinfo=None)
-    if latest_total_date != datetime.min and latest_total_date.tzinfo is not None:
-        latest_total_date = latest_total_date.replace(tzinfo=None)
-    if latest_map_date != datetime.min and latest_map_date.tzinfo is not None:
-        latest_map_date = latest_map_date.replace(tzinfo=None)
-
+    latest_total_date = find_latest_file_date(RES_DIR, CONFIG['RESOURCE_FILE'])
+    latest_map_date = find_latest_file_date(MAP_DIR, CONFIG['MAP_FILE_PREFIX'])
+    
     print(f"Most recent MUR data: {latest_erddap_date.strftime('%Y-%m')}")
     print(f"Most recent indicator: {latest_total_date.strftime('%Y-%m')}")
     print(f"Most recent maps: {latest_map_date.strftime('%Y-%m')}")
 
-    # Indicator update
+    # Check and update the total indicator
     if latest_total_date < latest_erddap_date:
         print("Updating TOTAL indicator...")
-        if run_script(BIN_DIR / CONFIG["SCRIPTS"]["total_py"]):
-            print("Indicator updated. Running plot script...")
-            run_script(BIN_DIR / CONFIG["SCRIPTS"]["plot_py"])
+        if run_script(
+            CONFIG['PYTHON_PATH'],
+            BIN_DIR / CONFIG['SCRIPTS']['total_py']
+        ):
+            print("TOTAL indicator updated successfully. Running plot script.")
+            run_script(
+                CONFIG['PYTHON_PATH'],
+                BIN_DIR / CONFIG['SCRIPTS']['plot_py']
+            )
     else:
-        print("Indicator is up to date.")
+        print("TOTAL indicator is up to date.")
 
-    # Maps update
+    # Check and update the maps
     if latest_map_date < latest_erddap_date:
         print("Updating maps...")
         run_script(
-            BIN_DIR / CONFIG["SCRIPTS"]["maps_py"],
-            args=["-d", latest_erddap_date.strftime("%Y-%m"), "-n", "-t", "-j"],
+            CONFIG['PYTHON_PATH'],
+            BIN_DIR / CONFIG['SCRIPTS']['maps_py'],
+            args=['-d', latest_erddap_date.strftime('%Y-%m'), '-n', '-t', '-j']
         )
     else:
         print("Maps are up to date.")

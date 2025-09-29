@@ -1,13 +1,25 @@
 #!/usr/bin/env python3
-"""
-Scrapes ENSO advisory and updates JSON outputs.
+# -*- coding: utf-8 -*-
+"""Scrape CPC website for El Nino data.
+
+This script obtains the latest status and summary for El Nino from the
+CLIMATE PREDICTION CENTER website. It stores these data in a JSON file,
+archives it locally, and uploads it to ERDDAP.
 """
 
-import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
+import requests
+import re
+from dateutil.parser import parse
+import os
+import shutil
 import json
+import sys
+from datetime import datetime
+import argparse
+import subprocess
 from pathlib import Path
+from typing import Dict, Any
 
 __author__ = "Dale Robinson"
 __credits__ = ["Dale Robinson"]
@@ -18,67 +30,178 @@ __email__ = "dale.Robinson@noaa.gov"
 __status__ = "Production"
 
 
-ROOT = Path(__file__).resolve().parents[1]
-JSON_DIR = ROOT / "data" / "json"
-JSON_DIR.mkdir(parents=True, exist_ok=True)
+# --- Configuration ---
+CONFIG = {
+    'ROOT_DIR': Path(__file__).resolve().parents[1],
+    'CPC_URL_BASE': 'https://www.cpc.ncep.noaa.gov/products/analysis_monitoring',
+    'JSON_FILE_NAME': 'elnino_last.json',
+    'JSON_FILE_ARCHIVE_TEMPLATE': '{}_elnino.json',
+}
 
-LAST_FILE = JSON_DIR / "elnino_last.json"
-HIST_FILE = JSON_DIR / "elnino_history.json"
 
-URL = "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml"
+def send_to_erddap(local_file: Path, remote_path: Path) -> bool:
+    """Sends a local file to a remote ERDDAP server via SCP.
 
-def scrape_enso():
-    r = requests.get(URL, timeout=20)
-    r.raise_for_status()
-    soup = BeautifulSoup(r.text, "html.parser")
+    Args:
+        local_file (Path): The path to the local file to send.
+        remote_path (Path): The path on the remote server where the file should be saved.
 
-    # Example scraping logic (adjust if CPC changes structure)
-    paragraphs = soup.find_all("p")
-    synopsis = paragraphs[1].get_text().strip() if len(paragraphs) > 1 else "N/A"
-    status = "N/A"
-    for p in paragraphs:
-        txt = p.get_text()
-        if "El Niño" in txt or "La Niña" in txt or "ENSO-neutral" in txt:
-            status = txt.strip()
-            break
+    Returns:
+        bool: True if the transfer was successful, False otherwise.
+    """
+    cmd = ['scp', str(local_file), f'{CONFIG["ERDDAP_USER_HOST"]}:{remote_path.as_posix()}']
+    
+    print(f"Executing: {' '.join(cmd)}")
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+        print(f"Successfully sent {local_file.name} to ERDDAP.")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"SCP command failed with exit code {e.returncode}.", file=sys.stderr)
+        print("Error details:", e.stderr, file=sys.stderr)
+    except FileNotFoundError:
+        print("SCP command not found. Is it installed and in your PATH?", file=sys.stderr)
+    return False
 
-    today = datetime.utcnow()
-    date_yrmo = today.strftime("%Y%m")
-    date_iso = today.strftime("%Y-%m-%dT00:00:00")
-    date_print = today.strftime("%d %B, %Y")
 
-    record = {
-        "date_yrmo": date_yrmo,
-        "date_iso": date_iso,
-        "date_print": date_print,
-        "synopsis": synopsis,
-        "status": status
+def get_latest_enso_data(session: requests.Session, url: str) -> Dict[str, Any]:
+    """Scrapes the latest ENSO status and synopsis from the CPC website.
+
+    Args:
+        session (requests.Session): The requests session object to use for the HTTP request.
+        url (str): The URL of the specific ENSO advisory page.
+
+    Returns:
+        Dict[str, Any]: A dictionary containing the ENSO status, synopsis, and date.
+    
+    Raises:
+        requests.exceptions.RequestException: If the HTTP request fails.
+        AttributeError: If key HTML elements (date, status, synopsis) are not found.
+    """
+    print(f"Attempting to scrape URL: {url}")
+    try:
+        html = session.get(url)
+        html.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching URL: {e}", file=sys.stderr)
+        sys.exit(3)
+        
+    soup = BeautifulSoup(html.text, 'html.parser')
+    
+    # Scrape Date
+    try:
+        ft = soup.find_all('font')
+        ft_clean = [f.contents[0].strip() for f in ft]
+        idx = ft_clean.index('issued by')
+        date_text = ft_clean[idx+2]
+        date_obj = parse(date_text.strip().replace("\n", ""))
+    except (AttributeError, TypeError):
+        print("Could not find date on the website.", file=sys.stderr)
+        sys.exit(3)
+
+    # Scrape Synopsis
+    try:
+        synopsis_heading = soup.find('u', string=re.compile('Synopsis'))
+        synopsis_text = synopsis_heading.find_next("strong").string
+    except AttributeError:
+        print("Could not parse synopsis info.", file=sys.stderr)
+        synopsis_text = "Not available"
+
+    # Scrape Status
+    try:
+        status_heading = soup.find('strong', string=re.compile('ENSO Alert'))
+        status_text = status_heading.find_next('a').get_text().strip()
+    except AttributeError:
+        print("Could not parse status info.", file=sys.stderr)
+        status_text = "Not available"
+
+    return {
+        "date_yrmo": date_obj.strftime('%Y%m'),
+        "date_iso": date_obj.isoformat(),
+        "date_print": date_obj.strftime('%d %B, %Y'),
+        "synopsis": synopsis_text,
+        "status": status_text,
     }
-    return record
 
-def update_json(record):
-    # Save last
-    with open(LAST_FILE, "w") as f:
-        json.dump(record, f, indent=4)
 
-    # Update history
-    history = {}
-    if HIST_FILE.exists():
-        with open(HIST_FILE) as f:
-            try:
-                history = json.load(f)
-            except json.JSONDecodeError:
-                history = {}
+def main():
+    """Controls and coordinates the scraping and updating of ENSO data."""
+    # Define directories
+    ROOT_DIR = CONFIG['ROOT_DIR']
+    WORK_DIR = ROOT_DIR / 'work'
+    JSON_DIR = ROOT_DIR / 'data' / 'json'
+    
+    # Create directories if they don't exist
+    WORK_DIR.mkdir(exist_ok=True)
+    JSON_DIR.mkdir(exist_ok=True)
 
-    history[record["date_yrmo"]] = {
-        "status": record["status"],
-        "synopsis": record["synopsis"],
-        "date_print": record["date_print"]
-    }
+    # Argument parsing
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        '-d', '--date',
+        help='Date for which to get the advisory (YYYY-MM).',
+        type=str
+    )
+    args = parser.parse_args()
 
-    with open(HIST_FILE, "w") as f:
-        json.dump(history, f, indent=4)
+    # Determine URL based on args
+    if args.date:
+        try:
+            custom_date = parse(args.date)
+            url_part = f"enso_disc_{custom_date.strftime('%b%Y').lower()}"
+        except ValueError:
+            parser.error("Invalid date format. Use YYYY-MM.")
+            
+    else:
+        url_part = "enso_advisory"
+        
+    url = f"{CONFIG['CPC_URL_BASE']}/{url_part}/ensodisc.shtml"
+    
+    # Get last scraped date from local file
+    local_file_path = JSON_DIR / CONFIG['JSON_FILE_NAME']
+    
+    try:
+        with open(local_file_path, 'r') as f:
+            last_dict = json.load(f)
+            last_date_obj = parse(last_dict['date_iso']).date()
+    except (FileNotFoundError, json.JSONDecodeError, KeyError):
+        last_date_obj = datetime.min.date()
+        print("Local JSON file not found or corrupted. Proceeding with update.")
+
+    # Scrape data from the website
+    with requests.Session() as session:
+        scraped_data = get_latest_enso_data(session, url)
+
+    # Check for update if not a custom date
+    if args.date is None:
+        new_date_obj = parse(scraped_data['date_iso']).date()
+        if new_date_obj <= last_date_obj:
+            print(f"New date ({new_date_obj}) is not newer than stored date ({last_date_obj}). No update needed.")
+            sys.exit(0)
+    
+    # Save a dated archive file
+    dated_file_name = CONFIG['JSON_FILE_ARCHIVE_TEMPLATE'].format(scraped_data['date_yrmo'])
+    dated_file_path = JSON_DIR / dated_file_name
+    with open(dated_file_path, 'w') as f:
+        json.dump(scraped_data, f, indent=4)
+    print(f"Archived dated file: {dated_file_path}")
+
+    # If not a custom date, update the main file and send to ERDDAP
+    if args.date is None:
+        with open(local_file_path, 'w') as f:
+            json.dump(scraped_data, f, indent=4)
+        print(f"Updated main file: {local_file_path}")
+
+        ## send_to_erddap(local_file_path, CONFIG['ERDDAP_PATH'] / CONFIG['JSON_FILE_NAME'])
+
+    # Send the dated file to ERDDAP
+    ## send_to_erddap(dated_file_path, CONFIG['ERDDAP_PATH'] / dated_file_path.name)
+    
+    sys.exit(0)
+
 
 if __name__ == "__main__":
-    rec = scrape_enso()
-    update_json(rec)
+    main()
