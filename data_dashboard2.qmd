@@ -35,6 +35,13 @@ anchor-sections: false
 
 :::
 
+:::{.dashboard-card}
+### Historical Closure and Environmental Information
+
+View the closure status of the Pacific Loggerhead Conservation Area and the seasonal (March-August) or annual (January-December) prevailing oceanic environmental conditions from the years 2003 to the present.
+
+:::
+
 
 ::: {.dashboard-card}
 ### Closure History
@@ -183,7 +190,8 @@ document.addEventListener("DOMContentLoaded", function() {
   const sstCaption   = document.getElementById("sst-caption");
   const anomCaption  = document.getElementById("anom-caption");
   // Data holders
-  let allData = [];
+  let allData = {};
+  let ensoData = {};
   let closureData = [];
   let currentUnit = "C";
   // Slider state
@@ -192,12 +200,18 @@ document.addEventListener("DOMContentLoaded", function() {
   let sstIndex = 0;
   let anomIndex = 0;
   const monthsMap = {
+    "01": "January",
+    "02": "February",
     "03": "March",
     "04": "April",
     "05": "May",
     "06": "June",
     "07": "July",
-    "08": "August"
+    "08": "August",
+    "09": "September",
+    "10": "October",
+    "11": "November",
+    "12": "December"
   };
   // === Utility: Generate March–August image URLs for a given year ===
   function getSSTImages(year) {
@@ -214,15 +228,19 @@ document.addEventListener("DOMContentLoaded", function() {
       month: monthsMap[m]
     }));
   }
-  // === Load ENSO/SST CSV ===
-  Papa.parse("environmental_conditions.csv", {
-    download: true,
-    header: true,
-    complete: function(results) {
-      allData = results.data;
+  // === Load ENSO + SST JSON instead of CSV ===
+  fetch("data/json/elnino_last.json")
+    .then(resp => resp.json())
+    .then(data => {
+      ensoData = data;
+      return fetch("data/json/latest.json");
+    })
+    .then(resp => resp.json())
+    .then(data => {
+      allData = data;
       renderTable(yearSelect.value, currentUnit);
-    }
-  });
+    })
+    .catch(err => console.error("Error loading ENSO/SST data:", err));
   // === Load Closure CSV ===
   Papa.parse("closure_history.csv", {
     download: true,
@@ -234,18 +252,20 @@ document.addEventListener("DOMContentLoaded", function() {
   });
   // === ENSO Table ===
   function renderTable(year, unit) {
-    const rows = allData.filter(row => row.year == year);
     tableBody.innerHTML = "";
     tempHeader.textContent = unit === "C" ? "Temp (°C)" : "Temp (°F)";
     anomHeader.textContent = unit === "C" ? "Anomaly (°C)" : "Anomaly (°F)";
     if (elninoYear) elninoYear.textContent = year;
-    rows.forEach(function(row) {
-      let tempC = parseFloat(row.temp);
-      let anomC = parseFloat(row.anomaly);
+    // iterate over keys t0..t5 in latest.json
+    Object.keys(allData).forEach(key => {
+      const row = allData[key];
+      let tempC = parseFloat(row.sst);
+      let anomC = parseFloat(row.anom);
       let temp = unit === "F" ? (tempC * 9/5) + 32 : tempC;
       let anom = unit === "F" ? anomC * 9/5 : anomC;
       const tr = document.createElement("tr");
-      [row.month, row.status, row.forecast, temp.toFixed(1)].forEach(val => {
+      // ENSO status + forecast come from ensoData
+      [row.month, ensoData.status || "N/A", ensoData.synopsis || "N/A", temp.toFixed(1)].forEach(val => {
         const td = document.createElement("td");
         td.textContent = val;
         tr.appendChild(td);
@@ -276,7 +296,7 @@ document.addEventListener("DOMContentLoaded", function() {
     if (bycatchYear) bycatchYear.textContent = year;
     if (bycatchRange) bycatchRange.textContent = `January – December ${year}`;
     if (bycatchImg)
-      bycatchImg.src = `data/images/indicator_${year}`;
+      bycatchImg.src = `data/images/indicator_${year}.png`;
   }
   // === SST & Anomaly Cards ===
   function updateSST() {
