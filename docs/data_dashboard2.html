@@ -273,6 +273,7 @@ document.addEventListener("DOMContentLoaded", function() {
   const sstCaption   = document.getElementById("sst-caption");
   const anomCaption  = document.getElementById("anom-caption");
   // Data holders
+  let legacyData = [];
   let allData = {};
   let ensoData = {};
   let closureData = [];
@@ -296,6 +297,7 @@ document.addEventListener("DOMContentLoaded", function() {
     "11": "November",
     "12": "December"
   };
+
   // === Utility: Generate March–August image URLs for a given year ===
   function getSSTImages(year) {
     const months = ["03","04","05","06","07","08"];
@@ -311,7 +313,17 @@ document.addEventListener("DOMContentLoaded", function() {
       month: monthsMap[m]
     }));
   }
-  // === Load ENSO + SST JSON instead of CSV ===
+
+  // === Load legacy CSV (2003–2024) ===
+  Papa.parse("data/resources/environmental_conditions.csv", {
+    download: true,
+    header: true,
+    complete: function(results) {
+      legacyData = results.data;
+    }
+  });
+
+  // === Load ENSO + SST JSON (2025+) ===
   fetch("data/json/elnino_last.json")
     .then(resp => resp.json())
     .then(data => {
@@ -324,6 +336,7 @@ document.addEventListener("DOMContentLoaded", function() {
       renderTable(yearSelect.value, currentUnit);
     })
     .catch(err => console.error("Error loading ENSO/SST data:", err));
+
   // === Load Closure CSV ===
   Papa.parse("closure_history.csv", {
     download: true,
@@ -333,39 +346,71 @@ document.addEventListener("DOMContentLoaded", function() {
       updateClosure(yearSelect.value);
     }
   });
+
   // === ENSO Table ===
   function renderTable(year, unit) {
     tableBody.innerHTML = "";
     tempHeader.textContent = unit === "C" ? "Temp (°C)" : "Temp (°F)";
     anomHeader.textContent = unit === "C" ? "Anomaly (°C)" : "Anomaly (°F)";
     if (elninoYear) elninoYear.textContent = year;
-    // iterate over keys t0..t5 in latest.json
-    Object.keys(allData).forEach(key => {
-      const row = allData[key];
-      let tempC = parseFloat(row.sst);
-      let anomC = parseFloat(row.anom);
-      let temp = unit === "F" ? (tempC * 9/5) + 32 : tempC;
-      let anom = unit === "F" ? anomC * 9/5 : anomC;
-      const tr = document.createElement("tr");
-      // ENSO status + forecast come from ensoData
-      [row.month, ensoData.status || "N/A", ensoData.synopsis || "N/A", temp.toFixed(1)].forEach(val => {
-        const td = document.createElement("td");
-        td.textContent = val;
-        tr.appendChild(td);
+
+    if (parseInt(year) <= 2024) {
+      // Use legacy CSV
+      const rows = legacyData.filter(row => row.year == year);
+      rows.forEach(function(row) {
+        let tempC = parseFloat(row.temp);
+        let anomC = parseFloat(row.anomaly);
+        let temp = unit === "F" ? (tempC * 9/5) + 32 : tempC;
+        let anom = unit === "F" ? anomC * 9/5 : anomC;
+
+        const tr = document.createElement("tr");
+        [row.month, row.status, row.forecast, temp.toFixed(1)].forEach(val => {
+          const td = document.createElement("td");
+          td.textContent = val;
+          tr.appendChild(td);
+        });
+        const tdAnom = document.createElement("td");
+        tdAnom.textContent = anom.toFixed(1);
+        if (anom > 0) {
+          tdAnom.style.color = "red";
+          tdAnom.style.fontWeight = "bold";
+        } else if (anom < 0) {
+          tdAnom.style.color = "blue";
+          tdAnom.style.fontWeight = "bold";
+        }
+        tr.appendChild(tdAnom);
+        tableBody.appendChild(tr);
       });
-      const tdAnom = document.createElement("td");
-      tdAnom.textContent = anom.toFixed(1);
-      if (anom > 0) {
-        tdAnom.style.color = "red";
-        tdAnom.style.fontWeight = "bold";
-      } else if (anom < 0) {
-        tdAnom.style.color = "blue";
-        tdAnom.style.fontWeight = "bold";
-      }
-      tr.appendChild(tdAnom);
-      tableBody.appendChild(tr);
-    });
+    } else {
+      // Use JSON (2025+)
+      Object.keys(allData).forEach(key => {
+        const row = allData[key];
+        let tempC = parseFloat(row.sst);
+        let anomC = parseFloat(row.anom);
+        let temp = unit === "F" ? (tempC * 9/5) + 32 : tempC;
+        let anom = unit === "F" ? anomC * 9/5 : anomC;
+
+        const tr = document.createElement("tr");
+        [row.month, ensoData.status || "N/A", ensoData.synopsis || "N/A", temp.toFixed(1)].forEach(val => {
+          const td = document.createElement("td");
+          td.textContent = val;
+          tr.appendChild(td);
+        });
+        const tdAnom = document.createElement("td");
+        tdAnom.textContent = anom.toFixed(1);
+        if (anom > 0) {
+          tdAnom.style.color = "red";
+          tdAnom.style.fontWeight = "bold";
+        } else if (anom < 0) {
+          tdAnom.style.color = "blue";
+          tdAnom.style.fontWeight = "bold";
+        }
+        tr.appendChild(tdAnom);
+        tableBody.appendChild(tr);
+      });
+    }
   }
+
   // === Closure Card ===
   function updateClosure(year) {
     const record = closureData.find(row => row.year == year);
@@ -374,6 +419,7 @@ document.addEventListener("DOMContentLoaded", function() {
       ? record.closure_status
       : `No closure data available for ${year}.`;
   }
+
   // === Bycatch Card ===
   function updateBycatch(year) {
     if (bycatchYear) bycatchYear.textContent = year;
@@ -381,6 +427,7 @@ document.addEventListener("DOMContentLoaded", function() {
     if (bycatchImg)
       bycatchImg.src = `data/images/indicator_${year}.png`;
   }
+
   // === SST & Anomaly Cards ===
   function updateSST() {
     if (sstImgEl && sstImages.length > 0) {
@@ -402,6 +449,7 @@ document.addEventListener("DOMContentLoaded", function() {
       if (anomNextBtn) anomNextBtn.style.opacity = anomIndex === anomImages.length - 1 ? 0.5 : 1;
     }
   }
+
   // === Slider Event Listeners ===
   if (sstPrevBtn && sstNextBtn) {
     sstPrevBtn.addEventListener("click", (e) => {
@@ -435,6 +483,7 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     });
   }
+
   // === Dropdown change ===
   yearSelect.addEventListener("change", function() {
     const year = yearSelect.value;
@@ -448,6 +497,7 @@ document.addEventListener("DOMContentLoaded", function() {
     updateSST();
     updateAnom();
   });
+
   // === Unit toggle ===
   unitRadios.forEach(radio => {
     radio.addEventListener("change", function() {
@@ -457,6 +507,7 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     });
   });
+
   // === Initial load ===
   const initialYear = yearSelect.value;
   renderTable(initialYear, currentUnit);
