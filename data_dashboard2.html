@@ -152,6 +152,10 @@ ul.task-list li input[type="checkbox"] {
 <div class="year-select-wrapper">
 <p><strong>Select Year:</strong> <select id="year-select-input"> <option value="2025" selected="">2025</option> <option value="2024">2024</option> <option value="2023">2023</option> <option value="2022">2022</option> <option value="2021">2021</option> <option value="2020">2020</option> <option value="2019">2019</option> <option value="2018">2018</option> <option value="2017">2017</option> <option value="2016">2016</option> <option value="2015">2015</option> <option value="2014">2014</option> <option value="2013">2013</option> <option value="2012">2012</option> <option value="2011">2011</option> <option value="2010">2010</option> <option value="2009">2009</option> <option value="2008">2008</option> <option value="2007">2007</option> <option value="2006">2006</option> <option value="2005">2005</option> <option value="2004">2004</option> <option value="2003">2003</option> </select></p>
 </div>
+<section id="historical-closure-and-environmental-information" class="level3 dashboard-card">
+<h3 data-anchor-id="historical-closure-and-environmental-information">Historical Closure and Environmental Information</h3>
+<p>View the closure status of the Pacific Loggerhead Conservation Area and the seasonal (March-August) or annual (January-December) prevailing oceanic environmental conditions from the years 2003 to the present.</p>
+</section>
 <section id="closure-history" class="level3 dashboard-card">
 <h3 data-anchor-id="closure-history">Closure History</h3>
 <div class="dashboard-grid">
@@ -272,7 +276,9 @@ document.addEventListener("DOMContentLoaded", function() {
   const sstCaption   = document.getElementById("sst-caption");
   const anomCaption  = document.getElementById("anom-caption");
   // Data holders
-  let allData = [];
+  let legacyData = [];
+  let allData = {};
+  let ensoData = {};
   let closureData = [];
   let currentUnit = "C";
   // Slider state
@@ -281,13 +287,20 @@ document.addEventListener("DOMContentLoaded", function() {
   let sstIndex = 0;
   let anomIndex = 0;
   const monthsMap = {
+    "01": "January",
+    "02": "February",
     "03": "March",
     "04": "April",
     "05": "May",
     "06": "June",
     "07": "July",
-    "08": "August"
+    "08": "August",
+    "09": "September",
+    "10": "October",
+    "11": "November",
+    "12": "December"
   };
+
   // === Utility: Generate March–August image URLs for a given year ===
   function getSSTImages(year) {
     const months = ["03","04","05","06","07","08"];
@@ -303,15 +316,30 @@ document.addEventListener("DOMContentLoaded", function() {
       month: monthsMap[m]
     }));
   }
-  // === Load ENSO/SST CSV ===
-  Papa.parse("environmental_conditions.csv", {
+
+  // === Load legacy CSV (2003–2024) ===
+  Papa.parse("data/resources/environmental_conditions.csv", {
     download: true,
     header: true,
     complete: function(results) {
-      allData = results.data;
-      renderTable(yearSelect.value, currentUnit);
+      legacyData = results.data;
     }
   });
+
+  // === Load ENSO + SST JSON (2025+) ===
+  fetch("data/json/elnino_last.json")
+    .then(resp => resp.json())
+    .then(data => {
+      ensoData = data;
+      return fetch("data/json/latest.json");
+    })
+    .then(resp => resp.json())
+    .then(data => {
+      allData = data;
+      renderTable(yearSelect.value, currentUnit);
+    })
+    .catch(err => console.error("Error loading ENSO/SST data:", err));
+
   // === Load Closure CSV ===
   Papa.parse("closure_history.csv", {
     download: true,
@@ -321,37 +349,71 @@ document.addEventListener("DOMContentLoaded", function() {
       updateClosure(yearSelect.value);
     }
   });
+
   // === ENSO Table ===
   function renderTable(year, unit) {
-    const rows = allData.filter(row => row.year == year);
     tableBody.innerHTML = "";
     tempHeader.textContent = unit === "C" ? "Temp (°C)" : "Temp (°F)";
     anomHeader.textContent = unit === "C" ? "Anomaly (°C)" : "Anomaly (°F)";
     if (elninoYear) elninoYear.textContent = year;
-    rows.forEach(function(row) {
-      let tempC = parseFloat(row.temp);
-      let anomC = parseFloat(row.anomaly);
-      let temp = unit === "F" ? (tempC * 9/5) + 32 : tempC;
-      let anom = unit === "F" ? anomC * 9/5 : anomC;
-      const tr = document.createElement("tr");
-      [row.month, row.status, row.forecast, temp.toFixed(1)].forEach(val => {
-        const td = document.createElement("td");
-        td.textContent = val;
-        tr.appendChild(td);
+
+    if (parseInt(year) <= 2024) {
+      // Use legacy CSV
+      const rows = legacyData.filter(row => row.year == year);
+      rows.forEach(function(row) {
+        let tempC = parseFloat(row.temp);
+        let anomC = parseFloat(row.anomaly);
+        let temp = unit === "F" ? (tempC * 9/5) + 32 : tempC;
+        let anom = unit === "F" ? anomC * 9/5 : anomC;
+
+        const tr = document.createElement("tr");
+        [row.month, row.status, row.forecast, temp.toFixed(1)].forEach(val => {
+          const td = document.createElement("td");
+          td.textContent = val;
+          tr.appendChild(td);
+        });
+        const tdAnom = document.createElement("td");
+        tdAnom.textContent = anom.toFixed(1);
+        if (anom > 0) {
+          tdAnom.style.color = "red";
+          tdAnom.style.fontWeight = "bold";
+        } else if (anom < 0) {
+          tdAnom.style.color = "blue";
+          tdAnom.style.fontWeight = "bold";
+        }
+        tr.appendChild(tdAnom);
+        tableBody.appendChild(tr);
       });
-      const tdAnom = document.createElement("td");
-      tdAnom.textContent = anom.toFixed(1);
-      if (anom > 0) {
-        tdAnom.style.color = "red";
-        tdAnom.style.fontWeight = "bold";
-      } else if (anom < 0) {
-        tdAnom.style.color = "blue";
-        tdAnom.style.fontWeight = "bold";
-      }
-      tr.appendChild(tdAnom);
-      tableBody.appendChild(tr);
-    });
+    } else {
+      // Use JSON (2025+)
+      Object.keys(allData).forEach(key => {
+        const row = allData[key];
+        let tempC = parseFloat(row.sst);
+        let anomC = parseFloat(row.anom);
+        let temp = unit === "F" ? (tempC * 9/5) + 32 : tempC;
+        let anom = unit === "F" ? anomC * 9/5 : anomC;
+
+        const tr = document.createElement("tr");
+        [row.month, ensoData.status || "N/A", ensoData.synopsis || "N/A", temp.toFixed(1)].forEach(val => {
+          const td = document.createElement("td");
+          td.textContent = val;
+          tr.appendChild(td);
+        });
+        const tdAnom = document.createElement("td");
+        tdAnom.textContent = anom.toFixed(1);
+        if (anom > 0) {
+          tdAnom.style.color = "red";
+          tdAnom.style.fontWeight = "bold";
+        } else if (anom < 0) {
+          tdAnom.style.color = "blue";
+          tdAnom.style.fontWeight = "bold";
+        }
+        tr.appendChild(tdAnom);
+        tableBody.appendChild(tr);
+      });
+    }
   }
+
   // === Closure Card ===
   function updateClosure(year) {
     const record = closureData.find(row => row.year == year);
@@ -360,13 +422,15 @@ document.addEventListener("DOMContentLoaded", function() {
       ? record.closure_status
       : `No closure data available for ${year}.`;
   }
+
   // === Bycatch Card ===
   function updateBycatch(year) {
     if (bycatchYear) bycatchYear.textContent = year;
     if (bycatchRange) bycatchRange.textContent = `January – December ${year}`;
     if (bycatchImg)
-      bycatchImg.src = `data/images/indicator_${year}`;
+      bycatchImg.src = `data/images/indicator_${year}.png`;
   }
+
   // === SST & Anomaly Cards ===
   function updateSST() {
     if (sstImgEl && sstImages.length > 0) {
@@ -388,6 +452,7 @@ document.addEventListener("DOMContentLoaded", function() {
       if (anomNextBtn) anomNextBtn.style.opacity = anomIndex === anomImages.length - 1 ? 0.5 : 1;
     }
   }
+
   // === Slider Event Listeners ===
   if (sstPrevBtn && sstNextBtn) {
     sstPrevBtn.addEventListener("click", (e) => {
@@ -421,6 +486,7 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     });
   }
+
   // === Dropdown change ===
   yearSelect.addEventListener("change", function() {
     const year = yearSelect.value;
@@ -434,6 +500,7 @@ document.addEventListener("DOMContentLoaded", function() {
     updateSST();
     updateAnom();
   });
+
   // === Unit toggle ===
   unitRadios.forEach(radio => {
     radio.addEventListener("change", function() {
@@ -443,6 +510,7 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     });
   });
+
   // === Initial load ===
   const initialYear = yearSelect.value;
   renderTable(initialYear, currentUnit);
