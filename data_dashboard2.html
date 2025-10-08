@@ -162,7 +162,7 @@ ul.task-list li input[type="checkbox"] {
 <section id="pacific-loggerhead-conservation-area-closures---2025-season" class="level4 dashboard-title dashboard-subcard">
 <h4 class="dashboard-title" data-anchor-id="pacific-loggerhead-conservation-area-closures---2025-season">Pacific Loggerhead Conservation Area Closures - <span id="closure-year">2025</span> Season</h4>
 <p id="closure-text">
-Loading…
+Loading closure history…
 </p>
 <p><small> *<a href="https://www.westcoast.fisheries.noaa.gov/">Closure status provided by NOAA Fisheries West Coast Regional Office</a> </small></p>
 </section>
@@ -341,7 +341,7 @@ document.addEventListener("DOMContentLoaded", function() {
     .catch(err => console.error("Error loading ENSO/SST data:", err));
 
   // === Load Closure CSV ===
-  Papa.parse("closure_history.csv", {
+  Papa.parse("data/resources/ltca_closure.csv", {
     download: true,
     header: true,
     complete: function(results) {
@@ -418,18 +418,51 @@ document.addEventListener("DOMContentLoaded", function() {
   function updateClosure(year) {
     const record = closureData.find(row => row.year == year);
     if (closureYear) closureYear.textContent = year;
-    closureText.textContent = record
-      ? record.closure_status
-      : `No closure data available for ${year}.`;
+
+    if (record && record.start && record.end) {
+      const start = new Date(record.start).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+      const end   = new Date(record.end).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+      const link  = record.cl_link ? `https://www.federalregister.gov/${record.cl_link}` : null;
+
+      let msg = `
+        NMFS prohibited fishing with large-mesh drift gillnet gear in the Pacific Loggerhead Conservation Area
+        from <strong>${start}</strong> to <strong>${end}</strong>.
+      `;
+      if (link) msg += `<br><a href="${link}" target="_blank">View Federal Register Notice</a>`;
+      closureText.innerHTML = msg;
+    } else {
+      closureText.innerHTML = `
+        NMFS did not prohibit fishing with large-mesh drift gillnet gear in the Loggerhead Conservation Area this season.
+      `;
+    }
   }
 
   // === Bycatch Card ===
   function updateBycatch(year) {
-    if (bycatchYear) bycatchYear.textContent = year;
-    if (bycatchRange) bycatchRange.textContent = `January – December ${year}`;
-    if (bycatchImg)
-      bycatchImg.src = `data/images/indicator_${year}.png`;
-  }
+  if (bycatchYear) bycatchYear.textContent = year;
+  if (bycatchRange) bycatchRange.textContent = `January – December ${year}`;
+  if (!bycatchImg) return;
+
+  // Build both possible file paths
+  const yearlyPath = `data/images/indicator_${year}.png`;
+  const latestPath = `data/images/indicator_latest.png`;
+
+  // Try the year-specific image first
+  fetch(yearlyPath, { method: "HEAD" })
+    .then(res => {
+      // If found (status 200–299), use the yearly one
+      if (res.ok) {
+        bycatchImg.src = yearlyPath;
+      } else {
+        // Otherwise fall back to latest
+        bycatchImg.src = latestPath;
+      }
+    })
+    .catch(() => {
+      // Network or 404 error fallback
+      bycatchImg.src = latestPath;
+    });
+}
 
   // === SST & Anomaly Cards ===
   function updateSST() {
