@@ -21,6 +21,7 @@ Example:
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import subprocess
 import warnings
@@ -196,7 +197,7 @@ def main() -> None:
 
     # Define paths
     base_dir = Path.cwd()
-    work_dir = base_dir / "data" / "work"
+    #work_dir = base_dir / "data" / "work"
     results_dir = base_dir / "data" / "images"
     res_dir = base_dir / "data" / "resources"
     erddap_dir = base_dir / "data" / "upload"
@@ -220,15 +221,17 @@ def main() -> None:
     print(f"Plot time range: {start_time:%Y-%m} to {end_time:%Y-%m}")
 
     # Plot and save
-    plot_index(indx_df, indicator_png, work_dir, time_range)
-    shutil.copyfile(work_dir / indicator_png, results_dir / indicator_png)
+    plot_index(indx_df, indicator_png, results_dir, time_range)
+    #shutil.copyfile(work_dir / indicator_png, results_dir / indicator_png)
     #send_to_erddap(results_dir, indicator_png, erddap_dir, indicator_png)
 
     # Generate yearly summary if December
     if end_time.month == 12:
         yearly_plot = f"indicator_{end_time.year}.png"
-        shutil.copyfile(results_dir / indicator_png, results_dir / yearly_plot)
-        send_to_erddap(results_dir, yearly_plot, erddap_dir, yearly_plot)
+        results_dir.joinpath(indicator_png).replace(results_dir / yearly_plot)
+        if "GITHUB_ACTIONS" not in os.environ:
+            #shutil.copyfile(results_dir / indicator_png, results_dir / yearly_plot)
+            send_to_erddap(results_dir, yearly_plot, erddap_dir, yearly_plot)
 
 
 if __name__ == "__main__":
