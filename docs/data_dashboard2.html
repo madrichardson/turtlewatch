@@ -338,7 +338,7 @@ document.addEventListener("DOMContentLoaded", function() {
     .catch(err => console.error("Error loading ENSO/SST data:", err));
 
   // === Load Closure CSV ===
-  Papa.parse("ltca_closure - closure.csv", {
+  Papa.parse("data/resources/ltca_closure.csv", {
     download: true,
     header: true,
     complete: function(results) {
@@ -415,9 +415,23 @@ document.addEventListener("DOMContentLoaded", function() {
   function updateClosure(year) {
     const record = closureData.find(row => row.year == year);
     if (closureYear) closureYear.textContent = year;
-    closureText.textContent = record
-      ? record.closure_status
-      : `No closure data available for ${year}.`;
+
+    if (record && record.start && record.end) {
+      const start = new Date(record.start).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+      const end   = new Date(record.end).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+      const link  = record.cl_link ? `https://www.federalregister.gov/${record.cl_link}` : null;
+
+      let msg = `
+        NMFS prohibited fishing with large-mesh drift gillnet gear in the Pacific Loggerhead Conservation Area
+        from <strong>${start}</strong> to <strong>${end}</strong>.
+      `;
+      if (link) msg += `<br><a href="${link}" target="_blank">View Federal Register Notice</a>`;
+      closureText.innerHTML = msg;
+    } else {
+      closureText.innerHTML = `
+        NMFS did not prohibit fishing with large-mesh drift gillnet gear in the Loggerhead Conservation Area this season.
+      `;
+    }
   }
 
   // === Bycatch Card ===
@@ -538,60 +552,6 @@ document.addEventListener("DOMContentLoaded", function() {
   anomIndex = 0;
   updateSST();
   updateAnom();
-});
-</script>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  const yearSelect  = document.getElementById("year-select-input");
-  const closureText = document.getElementById("closure-text");
-  const closureYear = document.getElementById("closure-year");
-  const csvPath     = "data/resources/ltca_closure - closure.csv";
-
-  function loadClosure(year) {
-    closureYear.textContent = year;
-
-    Papa.parse(csvPath, {
-      download: true,
-      header: true,
-      complete: function(results) {
-        const data = results.data;
-        const record = data.find(r => r.year == year);
-
-        if (record && record.start && record.end) {
-          const start = new Date(record.start).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
-          const end   = new Date(record.end).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
-          const link  = record.cl_link ? `https://www.federalregister.gov/${record.cl_link}` : null;
-
-          let msg = `
-            NMFS prohibited fishing with large-mesh drift gillnet gear in the Pacific Loggerhead Conservation Area
-            from <strong>${start}</strong> to <strong>${end}</strong>.
-          `;
-          if (link) msg += `<br><a href="${link}" target="_blank">View Federal Register Notice</a>`;
-          closureText.innerHTML = msg;
-        } else {
-          closureText.innerHTML = `
-            NMFS did not prohibit fishing with large-mesh drift gillnet gear in the Loggerhead Conservation Area this season.
-          `;
-        }
-      },
-      error: function(err) {
-        console.error("Error loading ltca_closure - closure.csv:", err);
-        closureText.textContent = "Error loading closure data.";
-      }
-    });
-  }
-
-  // Update on dropdown change
-  if (yearSelect) {
-    yearSelect.addEventListener("change", () => {
-      loadClosure(yearSelect.value);
-    });
-  }
-
-  // Initial load
-  const initialYear = yearSelect ? yearSelect.value : new Date().getFullYear();
-  loadClosure(initialYear);
 });
 </script>
 
