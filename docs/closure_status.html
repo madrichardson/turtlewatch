@@ -166,13 +166,16 @@ ul.task-list li input[type="checkbox"] {
 <section id="el-niño-loading" class="level4 subcard-title">
 <h4 class="subcard-title" data-anchor-id="el-niño-loading">El Niño: <span id="nino-status">Loading…</span></h4>
 <p><em><span id="nino-synopsis">Loading ENSO synopsis…</span></em></p>
+<p>
+<em id="nino-date">Updated: Loading…</em>
+</p>
 <p><small><em><a id="nino-link" href="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml" target="_blank">NOAA’s Climate Prediction Center</a></em></small></p>
 <hr>
 </section>
 <section id="marine-heatwave-mhw" class="level4 subcard-title">
 <h4 class="subcard-title" data-anchor-id="marine-heatwave-mhw">Marine Heatwave (MHW)</h4>
 <p><em>Forecast period: <span id="heat-period">Loading…</span></em></p>
-<p><strong><span id="heat-region">Loading…</span></strong> <span id="heat-status">Loading Marine Heatwave data…</span></p>
+<p><strong><span id="heat-date">Loading…</span></strong> <span id="heat-status">Loading Marine Heatwave data…</span></p>
 <p><small><em><a href="https://psl.noaa.gov/marine-heatwaves/#report">NOAA’s Marine Heatwave Forecast</a></em></small></p>
 <p><small><em><a id="heat-link" href="https://psl.noaa.gov/marine-heatwaves/#report" target="_blank">NOAA’s Marine Heatwave Forecast</a></em></small></p>
 </section>
@@ -417,92 +420,33 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const container = document.getElementById("sst-table-container");
-  if (!container) return;
 
-  fetch("data/json/latest.json")
-    .then(response => response.json())
+  // === Load El Niño JSON ===
+  fetch("data/json/elnino_last.json")
+    .then(resp => resp.json())
     .then(data => {
-      // Sort keys (latest to oldest)
-      const keys = Object.keys(data).sort((a, b) => Number(b.slice(1)) - Number(a.slice(1)));
-
-      // Extract month, SST, and anomaly data
-      const months = keys.map(k => data[k].month || "");
-      const sstVals = keys.map(k => parseFloat(data[k].sst));
-      const anomVals = keys.map(k => parseFloat(data[k].anom));
-
-      // === Build table dynamically (DOM-safe, no raw HTML) ===
-      const table = document.createElement("table");
-      table.className = "table table-condensed table-striped";
-
-      // Header
-      const thead = document.createElement("thead");
-      const headerRow = document.createElement("tr");
-      headerRow.appendChild(document.createElement("th")); // empty corner cell
-      months.forEach(m => {
-        const th = document.createElement("th");
-        th.textContent = m;
-        headerRow.appendChild(th);
-      });
-      thead.appendChild(headerRow);
-      table.appendChild(thead);
-
-      // Body
-      const tbody = document.createElement("tbody");
-
-      // Temperature row
-      const tempRow = document.createElement("tr");
-      const tempLabel = document.createElement("td");
-      tempLabel.textContent = "Temperature";
-      tempRow.appendChild(tempLabel);
-      sstVals.forEach(v => {
-        const td = document.createElement("td");
-        td.textContent = v.toFixed(1);
-        tempRow.appendChild(td);
-      });
-      tbody.appendChild(tempRow);
-
-      // Anomaly row
-      const anomRow = document.createElement("tr");
-      const anomLabel = document.createElement("td");
-      anomLabel.textContent = "Anomaly";
-      anomRow.appendChild(anomLabel);
-      anomVals.forEach(v => {
-        const td = document.createElement("td");
-        td.textContent = v.toFixed(1);
-        td.style.fontWeight = "bold";
-        td.style.color = v > 0 ? "red" : v < 0 ? "blue" : "black";
-        anomRow.appendChild(td);
-      });
-      tbody.appendChild(anomRow);
-
-      table.appendChild(tbody);
-      container.innerHTML = ""; // clear loading text
-      container.appendChild(table);
-
-      // === Unit toggle logic ===
-      const radios = document.querySelectorAll("input[name='temp-unit']");
-      radios.forEach(radio => {
-        radio.addEventListener("change", () => {
-          const temps = table.querySelectorAll("tbody tr:first-child td:not(:first-child)");
-          const anoms = table.querySelectorAll("tbody tr:last-child td:not(:first-child)");
-
-          temps.forEach((td, i) => {
-            const c = sstVals[i];
-            td.textContent = radio.value === "C" ? c.toFixed(1) : (c * 9/5 + 32).toFixed(1);
-          });
-
-          anoms.forEach((td, i) => {
-            const c = anomVals[i];
-            td.textContent = radio.value === "C" ? c.toFixed(1) : (c * 9/5).toFixed(1);
-          });
-        });
-      });
+      const ninoStatus = document.getElementById("nino-status");
+      const ninoDate = document.getElementById("nino-date");
+      const ninoSynopsis = document.getElementById("nino-synopsis");
+      if (ninoStatus) ninoStatus.textContent = data.status || "Not available";
+      if (ninoDate) ninoDate.textContent = `Updated: ${data.date_print || "Not available"}`;
+      if (ninoSynopsis) ninoSynopsis.textContent = data.synopsis?.trim() || "Not available";
     })
-    .catch(err => {
-      console.error("Error loading latest.json:", err);
-      container.innerHTML = `<p style="color:red;">Error loading temperature data.</p>`;
-    });
+    .catch(err => console.error("Error loading El Niño JSON:", err));
+
+  // === Load Marine Heatwave JSON ===
+  fetch("data/json/heatwave.json")
+    .then(resp => resp.json())
+    .then(data => {
+      const hwPeriod = document.getElementById("heat-period");
+      const hwDate = document.getElementById("heat-date");
+      const hwStatus = document.getElementById("heat-status");
+      if (hwPeriod) hwPeriod.textContent = data.heat_period || "Not available";
+      if (hwDate) hwDate.textContent = data.heat_date || "Not available";
+      if (hwStatus) hwStatus.textContent = data.heat_status?.trim() || "Not available";
+    })
+    .catch(err => console.error("Error loading Heatwave JSON:", err));
+
 });
 </script>
 
