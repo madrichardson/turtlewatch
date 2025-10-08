@@ -50,7 +50,7 @@ jobs:
         run: python scripts/update_heatwave_2025.py
 
       - name: Scrape Plot Indicator Data
-        run: plot_total_tool_2025.py
+        run: python scripts/plot_total_tool_2025.py
 
       - name: Commit updated data & images
         run: |
