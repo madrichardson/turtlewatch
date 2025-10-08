@@ -546,7 +546,7 @@ document.addEventListener("DOMContentLoaded", function() {
   const yearSelect  = document.getElementById("year-select-input");
   const closureText = document.getElementById("closure-text");
   const closureYear = document.getElementById("closure-year");
-  const csvPath     = "data/resources/closure_history.csv";
+  const csvPath     = "data/resources/ltca_closure - closure.csv";
 
   function loadClosure(year) {
     closureYear.textContent = year;
@@ -576,7 +576,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       },
       error: function(err) {
-        console.error("Error loading closure_history.csv:", err);
+        console.error("Error loading ltca_closure - closure.csv:", err);
         closureText.textContent = "Error loading closure data.";
       }
     });
