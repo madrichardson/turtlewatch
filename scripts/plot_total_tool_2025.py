@@ -196,7 +196,7 @@ def main() -> None:
 
     # Define paths
     base_dir = Path.cwd()
-    work_dir = base_dir / "data"/ "work"
+    work_dir = base_dir / "data" / "work"
     results_dir = base_dir / "data" / "images"
     res_dir = base_dir / "data" / "resources"
     erddap_dir = base_dir / "data" / "upload"
