@@ -52,6 +52,9 @@ jobs:
       - name: Scrape Plot Indicator Data
         run: python scripts/plot_total_tool_2025.py
 
+      - name: Update closure history from Federal Register
+        run: python scripts/update_Itca_closure.py
+
       - name: Commit updated data & images
         run: |
           git config --global user.name "github-actions[bot]"
