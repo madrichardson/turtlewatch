@@ -338,7 +338,7 @@ document.addEventListener("DOMContentLoaded", function() {
     .catch(err => console.error("Error loading ENSO/SST data:", err));
 
   // === Load Closure CSV ===
-  Papa.parse("closure_history.csv", {
+  Papa.parse("ltca_closure - closure.csv", {
     download: true,
     header: true,
     complete: function(results) {
