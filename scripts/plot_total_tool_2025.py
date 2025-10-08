@@ -195,11 +195,11 @@ def main() -> None:
         raise TypeError("-e / --enddate must be in the form YYYY-mm")
 
     # Define paths
-    base_dir = Path("/home/cwatch/production/turtles")
-    work_dir = base_dir / "work"
-    results_dir = base_dir / "maps" / "new_index"
-    res_dir = base_dir / "resources"
-    erddap_dir = Path("/var/www/html/elnino/dash")
+    base_dir = Path.cwd()
+    work_dir = base_dir / "data"/ "work"
+    results_dir = base_dir / "data" / "images"
+    res_dir = base_dir / "data" / "resources"
+    erddap_dir = base_dir / "data" / "upload"
     csv_file = res_dir / "loggerhead_indx.csv"
 
     indicator_png = "indicator_latest.png"
@@ -222,7 +222,7 @@ def main() -> None:
     # Plot and save
     plot_index(indx_df, indicator_png, work_dir, time_range)
     shutil.copyfile(work_dir / indicator_png, results_dir / indicator_png)
-    send_to_erddap(results_dir, indicator_png, erddap_dir, indicator_png)
+    #send_to_erddap(results_dir, indicator_png, erddap_dir, indicator_png)
 
     # Generate yearly summary if December
     if end_time.month == 12:
