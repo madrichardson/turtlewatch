@@ -422,11 +422,30 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // === Bycatch Card ===
   function updateBycatch(year) {
-    if (bycatchYear) bycatchYear.textContent = year;
-    if (bycatchRange) bycatchRange.textContent = `January – December ${year}`;
-    if (bycatchImg)
-      bycatchImg.src = `data/images/indicator_${year}.png`;
-  }
+  if (bycatchYear) bycatchYear.textContent = year;
+  if (bycatchRange) bycatchRange.textContent = `January – December ${year}`;
+  if (!bycatchImg) return;
+
+  // Build both possible file paths
+  const yearlyPath = `data/images/indicator_${year}.png`;
+  const latestPath = `data/images/indicator_latest.png`;
+
+  // Try the year-specific image first
+  fetch(yearlyPath, { method: "HEAD" })
+    .then(res => {
+      // If found (status 200–299), use the yearly one
+      if (res.ok) {
+        bycatchImg.src = yearlyPath;
+      } else {
+        // Otherwise fall back to latest
+        bycatchImg.src = latestPath;
+      }
+    })
+    .catch(() => {
+      // Network or 404 error fallback
+      bycatchImg.src = latestPath;
+    });
+}
 
   // === SST & Anomaly Cards ===
   function updateSST() {
