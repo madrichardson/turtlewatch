@@ -29,21 +29,21 @@ NMFS has reopened the Pacific Loggerhead Conservation Area (LCA) to fishing with
 ::: {.status-subcard}
 
 #### El Niño: <span id="nino-status">Loading...</span> {.subcard-title}
-*<span id="nino-synopsis">Loading ENSO synopsis...</span>*
+**Updated:** <span id="nino-date">Loading...</span>
 
-<p><em id="nino-date">Updated: Loading...</em></p>
+**Forecast:**
+<span id="nino-synopsis">Loading ENSO synopsis...</span>
 
 <small>*<a id="nino-link" href="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml" target="_blank">NOAA’s Climate Prediction Center</a>*</small>
 
 ---
 
 #### Marine Heatwave (MHW) {.subcard-title}
-*Forecast period: <span id="heat-period">Loading...</span>*
+**Forecast period:** <span id="heat-period">Loading...</span>*
 
 **<span id="heat-date">Loading...</span>**
 <span id="heat-status">Loading Marine Heatwave data...</span>
 
-<small>*[NOAA’s Marine Heatwave Forecast](https://psl.noaa.gov/marine-heatwaves/#report)*</small>
 
 <small>*<a id="heat-link" href="https://psl.noaa.gov/marine-heatwaves/#report" target="_blank">NOAA’s Marine Heatwave Forecast</a>*</small>
 
