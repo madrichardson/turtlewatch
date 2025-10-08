@@ -28,23 +28,22 @@ NMFS has reopened the Pacific Loggerhead Conservation Area (LCA) to fishing with
 
 ::: {.status-subcard}
 
-#### El Niño: La Niña Watch {.subcard-title}
-*Updated: 14 August, 2025*
+#### El Niño: <span id="nino-status">Loading...</span> {.subcard-title}
+*<span id="nino-synopsis">Loading ENSO synopsis...</span>*
 
-**Forecast:**  
-ENSO-neutral is most likely through the late Northern Hemisphere summer 2025 (56% chance in August-October). Thereafter, a brief period of La Niña conditions is favored in the fall and early winter 2025-26 before reverting to ENSO-neutral.
-
-<small>*[NOAA’s Climate Prediction Center](https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml)*</small>
+<small>*<a id="nino-link" href="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml" target="_blank">NOAA’s Climate Prediction Center</a>*</small>
 
 ---
 
 #### Marine Heatwave (MHW) {.subcard-title}
-*Forecast period: Aug 2025 – Jul 2026*
+*Forecast period: <span id="heat-period">Loading...</span>*
 
-**Tropical/North Pacific:** 
-MHW likelihoods are low in the eastern tropical Pacific and along the North and South American west coasts through boreal fall (0-20% [0-20%]; medium-high confidence). In contrast, MHW likelihoods remain high in the central/western North Pacific (60-80% [30-60%]; low-medium confidence) and in the central/western South Pacific (40-60% [0-30%]; low-medium confidence).
+**<span id="heat-region">Loading...</span>**
+<span id="heat-status">Loading Marine Heatwave data...</span>
 
 <small>*[NOAA’s Marine Heatwave Forecast](https://psl.noaa.gov/marine-heatwaves/#report)*</small>
+
+<small>*<a id="heat-link" href="https://psl.noaa.gov/marine-heatwaves/#report" target="_blank">NOAA’s Marine Heatwave Forecast</a>*</small>
 
 :::
 
@@ -56,11 +55,9 @@ MHW likelihoods are low in the eastern tropical Pacific and along the North and 
 <label><input type="radio" name="temp-unit" value="F"> °F</label>
 </div>
 
-
-|        | Mar  | Apr  | May  | Jun  | Jul  | Aug  |
-|--------|------|------|------|------|------|------|
-| Temperature | 14.7 | 15.1 | 15.4 | 16.2 | 17.4 | 19.5 |
-| Anomaly     | 0.4  | 0.5  | 0.0  | -0.1  | -0.1 | 1.0 |
+<div id="sst-table-container">
+  <p>Loading temperature data...</p>
+</div>
 
 <small>
 Recent and historical monthly sea surface temperatures within the Loggerhead sea turtle conservation area.  
@@ -155,6 +152,7 @@ The information on this page may be used and redistributed freely, but is not in
 
 
 
+
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const radios = document.querySelectorAll("input[name='temp-unit']");
@@ -200,6 +198,32 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
+
+  // === NEW: Load El Niño JSON ===
+  fetch("data/json/elnino_last.json")
+    .then(resp => resp.json())
+    .then(data => {
+      const ninoStatus = document.getElementById("nino-status");
+      const ninoDate = document.getElementById("nino-date");
+      const ninoSynopsis = document.getElementById("nino-synopsis");
+      if (ninoStatus) ninoStatus.textContent = data.status || "Not available";
+      if (ninoDate) ninoDate.textContent = `Updated: ${data.date_print || "Not available"}`;
+      if (ninoSynopsis) ninoSynopsis.textContent = data.synopsis || "Not available";
+    })
+    .catch(err => console.error("Error loading El Niño JSON:", err));
+
+  // === NEW: Load Marine Heatwave JSON ===
+  fetch("data/json/heatwave.json")
+    .then(resp => resp.json())
+    .then(data => {
+      const hwPeriod = document.getElementById("heat-period");
+      const hwRegion = document.getElementById("heat-region");
+      const hwStatus = document.getElementById("heat-status");
+      if (hwPeriod) hwPeriod.textContent = data.heat_period || "Not available";
+      if (hwRegion) hwRegion.textContent = data.heat_region || "Not available";
+      if (hwStatus) hwStatus.textContent = data.heat_status || "Not available";
+    })
+    .catch(err => console.error("Error loading Heatwave JSON:", err));
 });
 </script>
 
@@ -295,5 +319,99 @@ document.addEventListener("DOMContentLoaded", () => {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     dateEl.textContent = today.toLocaleDateString(undefined, options);
   }
+});
+</script>
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const container = document.getElementById("sst-table-container");
+  if (!container) return;
+
+  fetch("data/json/latest.json")
+    .then(response => response.json())
+    .then(data => {
+      // Sort keys (latest to oldest)
+      const keys = Object.keys(data).sort((a, b) => Number(b.slice(1)) - Number(a.slice(1)));
+
+      // Extract month, SST, and anomaly data
+      const months = keys.map(k => data[k].month || "");
+      const sstVals = keys.map(k => parseFloat(data[k].sst));
+      const anomVals = keys.map(k => parseFloat(data[k].anom));
+
+      // === Build table dynamically (DOM-safe, no raw HTML) ===
+      const table = document.createElement("table");
+      table.className = "table table-condensed table-striped";
+
+      // Header
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+      headerRow.appendChild(document.createElement("th")); // empty corner cell
+      months.forEach(m => {
+        const th = document.createElement("th");
+        th.textContent = m;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      // Body
+      const tbody = document.createElement("tbody");
+
+      // Temperature row
+      const tempRow = document.createElement("tr");
+      const tempLabel = document.createElement("td");
+      tempLabel.textContent = "Temperature";
+      tempRow.appendChild(tempLabel);
+      sstVals.forEach(v => {
+        const td = document.createElement("td");
+        td.textContent = v.toFixed(1);
+        tempRow.appendChild(td);
+      });
+      tbody.appendChild(tempRow);
+
+      // Anomaly row
+      const anomRow = document.createElement("tr");
+      const anomLabel = document.createElement("td");
+      anomLabel.textContent = "Anomaly";
+      anomRow.appendChild(anomLabel);
+      anomVals.forEach(v => {
+        const td = document.createElement("td");
+        td.textContent = v.toFixed(1);
+        td.style.fontWeight = "bold";
+        td.style.color = v > 0 ? "red" : v < 0 ? "blue" : "black";
+        anomRow.appendChild(td);
+      });
+      tbody.appendChild(anomRow);
+
+      table.appendChild(tbody);
+      container.innerHTML = ""; // clear loading text
+      container.appendChild(table);
+
+      // === Unit toggle logic ===
+      const radios = document.querySelectorAll("input[name='temp-unit']");
+      radios.forEach(radio => {
+        radio.addEventListener("change", () => {
+          const temps = table.querySelectorAll("tbody tr:first-child td:not(:first-child)");
+          const anoms = table.querySelectorAll("tbody tr:last-child td:not(:first-child)");
+
+          temps.forEach((td, i) => {
+            const c = sstVals[i];
+            td.textContent = radio.value === "C" ? c.toFixed(1) : (c * 9/5 + 32).toFixed(1);
+          });
+
+          anoms.forEach((td, i) => {
+            const c = anomVals[i];
+            td.textContent = radio.value === "C" ? c.toFixed(1) : (c * 9/5).toFixed(1);
+          });
+        });
+      });
+    })
+    .catch(err => {
+      console.error("Error loading latest.json:", err);
+      container.innerHTML = `<p style="color:red;">Error loading temperature data.</p>`;
+    });
 });
 </script>
