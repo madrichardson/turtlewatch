@@ -126,7 +126,7 @@ Dataset: [GHRSST MUR](https://coastwatch.pfeg.noaa.gov/erddap/griddap/jplMURSST4
 [‹ Previous]{.prev}
 [Next ›]{.next}
 
-![](data/images/anom_placeholder.png){#anom-dash-image}
+![](data/images/anom_placeholder.png){#anom-image}
 :::
 Monthly mean surface temperature anomaly (deviation from the average temperature) off Southern California. The Pacific Loggerhead Conservation Area is located within the black lines and the coast. Use arrows to view the last six months of measurements.
 
@@ -140,6 +140,17 @@ Dataset: [GHRSST MUR](https://coastwatch.pfeg.noaa.gov/erddap/griddap/jplMURSST4
 ::: {.turtlewatch-disclaimer}
 The information on this page may be used and redistributed freely, but is not intended for legal use. Neither the data contributors, CoastWatch, NOAA SWFSC, nor any of their employees or contractors, makes any warranty, express or implied, including warranties of merchantability and fitness for a particular purpose, or assumes any legal liability for the accuracy, completeness, or usefulness of this information. For official information about El Niño/La Niña contact [NOAA's Climate Prediction Center](https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml). For official information about regulation of the drift gillnet (DGN) fishery contact [NOAA Fisheries West Coast Regional Office](https://www.westcoast.fisheries.noaa.gov/).
 :::
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -218,26 +229,29 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
-<!-- UPDATED SST IMAGES (local, dynamic like dashboard) -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const sstImgEl = document.getElementById("sst-image");
+  const images = [
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_0.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_1.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_2.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_3.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_4.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_5.png"
+  ];
+
+  let index = 0;
+  const imgEl = document.getElementById("sst-image");
   const prevBtn = document.querySelector(".sst-slider .prev");
   const nextBtn = document.querySelector(".sst-slider .next");
 
-  const year = new Date().getFullYear();
-  const months = ["03","04","05","06","07","08"];
-  const sstImages = months.map(m => `data/images/sst_${year}${m}16.png`);
-
-  let index = sstImages.length - 1;
-
   function updateImage() {
-    sstImgEl.src = sstImages[index];
+    imgEl.src = images[index];
     prevBtn.style.opacity = index === 0 ? 0.5 : 1;
-    nextBtn.style.opacity = index === sstImages.length - 1 ? 0.5 : 1;
+    nextBtn.style.opacity = index === images.length - 1 ? 0.5 : 1;
   }
 
-  prevBtn.addEventListener("click", e => {
+  prevBtn.addEventListener("click", (e) => {
     e.preventDefault();
     if (index > 0) {
       index--;
@@ -245,9 +259,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  nextBtn.addEventListener("click", e => {
+  nextBtn.addEventListener("click", (e) => {
     e.preventDefault();
-    if (index < sstImages.length - 1) {
+    if (index < images.length - 1) {
       index++;
       updateImage();
     }
@@ -257,37 +271,40 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
-<!-- UPDATED SST ANOMALY IMAGES (local, dynamic like dashboard) -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+  const anomImages = [
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_0.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_1.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_2.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_3.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_4.png",
+    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_5.png"
+  ];
+
+  let anomIndex = 0;
   const anomImgEl = document.getElementById("anom-image");
-  const prevBtn = document.querySelector(".anom-slider .prev");
-  const nextBtn = document.querySelector(".anom-slider .next");
-
-  const year = new Date().getFullYear();
-  const months = ["03","04","05","06","07","08"];
-  const anomImages = months.map(m => `data/images/anom_${year}${m}16.png`);
-
-  let index = anomImages.length - 1;
+  const anomPrevBtn = document.querySelector(".anom-slider .prev");
+  const anomNextBtn = document.querySelector(".anom-slider .next");
 
   function updateAnomImage() {
-    anomImgEl.src = anomImages[index];
-    prevBtn.style.opacity = index === 0 ? 0.5 : 1;
-    nextBtn.style.opacity = index === anomImages.length - 1 ? 0.5 : 1;
+    anomImgEl.src = anomImages[anomIndex];
+    anomPrevBtn.style.opacity = anomIndex === 0 ? 0.5 : 1;
+    anomNextBtn.style.opacity = anomIndex === anomImages.length - 1 ? 0.5 : 1;
   }
 
-  prevBtn.addEventListener("click", e => {
+  anomPrevBtn.addEventListener("click", (e) => {
     e.preventDefault();
-    if (index > 0) {
-      index--;
+    if (anomIndex > 0) {
+      anomIndex--;
       updateAnomImage();
     }
   });
 
-  nextBtn.addEventListener("click", e => {
+  anomNextBtn.addEventListener("click", (e) => {
     e.preventDefault();
-    if (index < anomImages.length - 1) {
-      index++;
+    if (anomIndex < anomImages.length - 1) {
+      anomIndex++;
       updateAnomImage();
     }
   });
