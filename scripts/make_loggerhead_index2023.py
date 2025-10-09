@@ -102,96 +102,75 @@ lon_range = [-120.3, -116]
 
 
 # === Main ===
+
 def main():
-    parser = argparse.ArgumentParser(
-        description="Update TOTAL loggerhead turtle index, plot, and JSON.")
-    parser.add_argument('-e', '--enddate', help='End date (YYYY-mm)', required=False, type=str)
-    parser.add_argument('-u', '--update', action='store_true', help='Update index values')
-    parser.add_argument('-p', '--plot', action='store_true', help='Generate indicator plot')
-    parser.add_argument('-j', '--json', action='store_true', help='Write web_data.json output')
+    """Update TOTAL index, create plot, and generate web_data.json."""
+    parser = argparse.ArgumentParser(description="Update TOTAL Loggerhead index")
+    parser.add_argument("-u", "--update", action="store_true", help="Update index values from ERDDAP")
+    parser.add_argument("-p", "--plot", action="store_true", help="Generate latest indicator plot")
+    parser.add_argument("-j", "--json", action="store_true", help="Create web_data.json summary")
     args = parser.parse_args()
 
-    if not (args.update or args.plot or args.json):
-        print("No operation specified. Use -u, -p, or -j.")
-        sys.exit(0)
+    ROOT_DIR = Path(__file__).resolve().parents[1]
+    WORK_DIR = ROOT_DIR / "work"
+    IMG_DIR = ROOT_DIR / "data" / "images"
+    JSON_DIR = ROOT_DIR / "data" / "json"
+    RES_DIR = ROOT_DIR / "data" / "resources"
+    WORK_DIR.mkdir(exist_ok=True)
+    IMG_DIR.mkdir(exist_ok=True)
+    JSON_DIR.mkdir(exist_ok=True)
 
-    loggerhead_indx = 'loggerhead_indx.csv'
-    indicator_png = 'indicator_latest.png'
-    json_file = CONFIG['JSON_FILE_NAME']
+    loggerhead_indx = "loggerhead_indx.csv"
+    indicator_png = "indicator_latest.png"
+    json_file = "web_data.json"
 
-    base_url = 'https://coastwatch.pfeg.noaa.gov/erddap/griddap/{}'
-    opendap_url = base_url.format('jplMURSST41anommday')
-    opendapsst_url = base_url.format('jplMURSST41')
-
-    # === Update data ===
+    # --- UPDATE SECTION (optional)
     if args.update:
         df = pd.read_csv(RES_DIR / loggerhead_indx)
-        df.sort_values(by=['dateyrmo'], ignore_index=True, inplace=True)
+        df.sort_values(by=["dateyrmo"], inplace=True)
         df.drop(df.tail(1).index, inplace=True)
-        index_time = df['dateyrmo'].values
+        index_time = df["dateyrmo"].values
 
-        edt = netCDF4.Dataset(opendap_url, 'r')
-        edt_time = edt['time'][:]
-        ds_lat = np.array(edt.variables['latitude'][:])
-        ds_lon = np.array(edt.variables['longitude'][:])
+        base_url = "https://coastwatch.pfeg.noaa.gov/erddap/griddap/{}"
+        opendap_url = base_url.format("jplMURSST41anommday")
+        opendapsst_url = base_url.format("jplMURSST41")
 
+        edt = netCDF4.Dataset(opendap_url, "r")
+        edt_time = edt["time"][:]
+        ds_lat = np.array(edt.variables["latitude"][:])
+        ds_lon = np.array(edt.variables["longitude"][:])
+        lat_range = [30.8, 34.5]
+        lon_range = [-120.3, -116]
         latidx_range = max_min_idx(ds_lat, lat_range)
         lonidx_range = max_min_idx(ds_lon, lon_range)
+        edt_time_obj = [datetime.fromtimestamp(t).astimezone(timezone.utc) for t in edt_time]
+        edt_time_str = [f"{t:%Y-%m}" for t in edt_time_obj]
 
-        edt_time_obj_16 = [datetime.fromtimestamp(ln).astimezone(timezone.utc)
-                           for ln in edt_time]
-        edt_time_str_16 = ['{0:%Y-%m}'.format(ln) for ln in edt_time_obj_16]
+        missing = sorted(set(edt_time_str) - set(index_time))
+        if len(missing) == 0:
+            print("No new data to process — continuing to JSON and plot steps.")
+        else:
+            edsst = netCDF4.Dataset(opendapsst_url, "r")
+            edstt_time_obj = [datetime.fromtimestamp(t).astimezone(timezone.utc) for t in edt["time"][:]]
+            edstt_time_obj = [t.replace(hour=0, minute=0, second=0, microsecond=0) for t in edstt_time_obj]
+            for m in missing:
+                i = edt_time_str.index(m)
+                edt_anom = edt["sstAnom"][i, latidx_range[0]:latidx_range[1], lonidx_range[0]:lonidx_range[1]]
+                sst_i = edstt_time_obj.index(edt_time_obj[i])
+                df.loc[len(df.index)] = [
+                    round(edt_anom.mean(), 2),
+                    round(df["anom"].iloc[-6:].mean(), 2),
+                    f"{edt_time_obj[i]:%Y-%m}"
+                ]
+            df.sort_values(by=["dateyrmo"], inplace=True)
+            df.to_csv(RES_DIR / loggerhead_indx, index=False, encoding="utf-8")
+            print(f"Updated {loggerhead_indx} with {len(missing)} new records.")
 
-        missing = sorted(set(edt_time_str_16) - set(index_time))
-        if not missing:
-            print("No new data to process.")
-            sys.exit(0)
-
-        indices_A = [edt_time_str_16.index(x) for x in missing]
-        indices_A.sort()
-
-        edsst = netCDF4.Dataset(opendapsst_url, 'r')
-        edstt_time = edt['time'][:]
-        edstt_time_obj_16 = [datetime.fromtimestamp(ln).astimezone(timezone.utc)
-                             for ln in edstt_time]
-        edstt_time_obj_16 = [ln.replace(hour=0, minute=0, second=0, microsecond=0)
-                             for ln in edstt_time_obj_16]
-
-        for indx in indices_A:
-            edt_anom = edt['sstAnom'][indx,
-                                      latidx_range[0]:latidx_range[1],
-                                      lonidx_range[0]:lonidx_range[1]]
-            sst_indx = edstt_time_obj_16.index(edt_time_obj_16[indx])
-            edsst_sst = edsst['analysed_sst'][sst_indx,
-                                              latidx_range[0]:latidx_range[1],
-                                              lonidx_range[0]:lonidx_range[1]]
-            df.loc[len(df.index)] = [
-                round(edt_anom.mean(), 2),
-                round(df['anom'].iloc[len(df.index)-7:len(df.index)-1].mean(), 2),
-                '{0:%Y-%m}'.format(edt_time_obj_16[indx])
-            ]
-
-        df.sort_values(by=['dateyrmo'], ignore_index=True, inplace=True)
-        df.to_csv(RES_DIR / loggerhead_indx, index=False, encoding='utf-8')
-        print("Index updated.")
-
-    # === Plot ===
-    if args.plot:
-        indx_df = pd.read_csv(RES_DIR / loggerhead_indx)
-        indx_df['dateyrmo'] = pd.to_datetime(indx_df['dateyrmo'], format='%Y-%m')
-        end_time = indx_df['dateyrmo'].max()
-        start_time = end_time - timedelta(days=390)
-        global t_range2
-        t_range2 = [start_time, end_time]
-        global indx_tf
-        indx_tf = ["black" if x < 0.77 else "red" for x in indx_df['indicator'].tolist()]
-        plot_index(indx_df, indicator_png, IMG_DIR)
-        print(f"📊 Plot saved to {IMG_DIR / indicator_png}")
-
-    # === JSON Output ===
+    # --- JSON CREATION (always runs if -j)
     if args.json:
-        indx_df = pd.read_csv(RES_DIR / loggerhead_indx)
-        latest_index = float(indx_df['indicator'].iloc[-1])
+        print("Creating web_data.json...")
+        df = pd.read_csv(RES_DIR / loggerhead_indx)
+        latest_index = float(df["indicator"].iloc[-1])
         alert_status = "Alert" if latest_index >= 0.77 else "No Alert"
         forecast_date = datetime.now().strftime("%B %Y")
         update_date = datetime.now().strftime("%d %b, %Y")
@@ -203,18 +182,21 @@ def main():
             "new_index": f"{latest_index:.2f}"
         }
 
-        # Write main and archive JSON
-        main_json = JSON_DIR / CONFIG['JSON_FILE_NAME']
-        dated_json = JSON_DIR / CONFIG['JSON_FILE_ARCHIVE_TEMPLATE'].format(datetime.now().strftime("%Y%m"))
-
-        with open(main_json, 'w') as f:
+        json_path = JSON_DIR / json_file
+        with open(json_path, "w") as f:
             json.dump(web_data, f, indent=4)
-        with open(dated_json, 'w') as f:
-            json.dump(web_data, f, indent=4)
+        print(f"JSON saved to {json_path}")
+        print(json.dumps(web_data, indent=4))
 
-        print(f"JSON saved to {main_json}")
-        print(f"Archived JSON: {dated_json}")
-
-
-if __name__ == "__main__":
-    main()
+    # --- PLOT SECTION (optional)
+    if args.plot:
+        print("Plotting indicator series...")
+        df = pd.read_csv(RES_DIR / loggerhead_indx)
+        df["dateyrmo"] = pd.to_datetime(df["dateyrmo"], format="%Y-%m")
+        end_time = df["dateyrmo"].max()
+        start_time = end_time - timedelta(days=395)
+        global t_range2, indx_tf
+        indx_tf = ["red" if v >= 0.77 else "black" for v in df["indicator"]]
+        t_range2 = [start_time, end_time]
+        plot_index(df, indicator_png, IMG_DIR)
+        print("Plot saved to", IMG_DIR / indicator_png)
