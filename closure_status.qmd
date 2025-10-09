@@ -150,7 +150,7 @@ The information on this page may be used and redistributed freely, but is not in
 document.addEventListener("DOMContentLoaded", () => {
 
   // === Load Closure Status from Itca_closure.csv ===
-  fetch("data/resources/Itca_closure.csv")
+  fetch("data/resources/ltca_closure.csv")
     .then(response => response.text())
     .then(text => {
       const rows = text.trim().split("\n").map(r => r.split(","));

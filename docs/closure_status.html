@@ -248,7 +248,7 @@ Dataset: <a href="https://coastwatch.pfeg.noaa.gov/erddap/search/index.html?page
 document.addEventListener("DOMContentLoaded", () => {
 
   // === Load Closure Status from Itca_closure.csv ===
-  fetch("data/resources/Itca_closure.csv")
+  fetch("data/resources/ltca_closure.csv")
     .then(response => response.text())
     .then(text => {
       const rows = text.trim().split("\n").map(r => r.split(","));
