@@ -97,6 +97,10 @@ RES_DIR = ROOT_DIR / 'data' / 'resources'
 for d in [WORK_DIR, IMG_DIR, JSON_DIR]:
     d.mkdir(parents=True, exist_ok=True)
 
+loggerhead_indx = "loggerhead_indx.csv"
+indicator_png = "indicator_latest.png"
+json_file = "web_data.json"
+
 lat_range = [30.8, 34.5]
 lon_range = [-120.3, -116]
 
@@ -183,9 +187,9 @@ def main():
         }
 
         json_path = JSON_DIR / json_file
-        with open(json_path, "w") as f:
-            json.dump(web_data, f, indent=4)
-        print(f"JSON saved to {json_path}")
+        print(f"Writing JSON to: {json_path.resolve()}")
+        json_path.write_text(json.dumps(web_data, indent=4))
+        print("JSON successfully written:")
         print(json.dumps(web_data, indent=4))
 
     # --- PLOT SECTION (optional)
