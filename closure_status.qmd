@@ -92,7 +92,7 @@ Dataset: [GHRSST MUR](https://coastwatch.pfeg.noaa.gov/erddap/search/index.html?
 
 This year’s **Temperature Observations To Avoid Loggerhead (TOTAL)** values for the Loggerhead Conservation Area. An alert is indicated when indicator values (the timeseries) exceed a threshold of **0.77 (red horizontal line)**.
 
-![](https://coastwatch.pfeg.noaa.gov/elnino/dash/indicator_latest.png){fig-align="center"}
+![](data/images/indicator_latest.png){#indicator-plot fig-align="center"}
 :::
 
 :::
