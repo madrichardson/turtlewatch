@@ -208,14 +208,10 @@ Dataset: <a href="https://coastwatch.pfeg.noaa.gov/erddap/search/index.html?page
 <h4 class="subcard-title" data-anchor-id="total-time-series">TOTAL Time Series</h4>
 <div class="status-info">
 <ul>
-<li><strong>Most recent forecast:</strong> September 2025<br>
-</li>
-<li><strong>Status:</strong> No Alert<br>
-</li>
-<li><strong>Indicator value:</strong> 0.11<br>
-</li>
-<li><strong>Updated:</strong> 04 Sep 2025<br>
-</li>
+<li><strong>Most recent forecast:</strong> <span id="total-fcdate">Loading…</span></li>
+<li><strong>Status:</strong> <span id="total-status">Loading…</span></li>
+<li><strong>Indicator value:</strong> <span id="total-index">Loading…</span></li>
+<li><strong>Updated:</strong> <span id="total-updated">Loading…</span></li>
 </ul>
 </div>
 <p>This year’s <strong>Temperature Observations To Avoid Loggerhead (TOTAL)</strong> values for the Loggerhead Conservation Area. An alert is indicated when indicator values (the timeseries) exceed a threshold of <strong>0.77 (red horizontal line)</strong>.</p>
@@ -362,6 +358,22 @@ document.addEventListener("DOMContentLoaded", () => {
         container.innerHTML = "<p style='color:red;'>Error loading temperature data.</p>";
       });
   }
+
+  // === Load TOTAL Loggerhead Index JSON ===
+  fetch("data/json/web_data.json")
+    .then(resp => resp.json())
+    .then(data => {
+      const fcEl = document.getElementById("total-fcdate");
+      const stEl = document.getElementById("total-status");
+      const idxEl = document.getElementById("total-index");
+      const updEl = document.getElementById("total-updated");
+
+      if (fcEl) fcEl.textContent = data.fc_date || "Not available";
+      if (stEl) stEl.textContent = data.alert || "Not available";
+      if (idxEl) idxEl.textContent = data.new_index || "Not available";
+      if (updEl) updEl.textContent = data.update_date || "Not available";
+    })
+    .catch(err => console.error("Error loading TOTAL index JSON:", err));
 
   // === SST SLIDER (local data/images/) ===
   const sstImgEl = document.getElementById("sst-dash-image");
