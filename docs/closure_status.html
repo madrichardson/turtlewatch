@@ -172,7 +172,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="marine-heatwave-mhw" class="level4 subcard-title">
 <h4 class="subcard-title" data-anchor-id="marine-heatwave-mhw">Marine Heatwave (MHW)</h4>
-<p><strong>Forecast period:</strong> <span id="heat-period">Loading…</span>*</p>
+<p><strong>Forecast period:</strong> <span id="heat-period">Loading…</span></p>
 <p><strong><span id="heat-date">Loading…</span></strong> <span id="heat-status">Loading Marine Heatwave data…</span></p>
 <p><small><em><a id="heat-link" href="https://psl.noaa.gov/marine-heatwaves/#report" target="_blank">NOAA’s Marine Heatwave Forecast</a></em></small></p>
 </section>
@@ -227,20 +227,20 @@ Dataset: <a href="https://coastwatch.pfeg.noaa.gov/erddap/search/index.html?page
 <section id="monthly-sea-surface-maps" class="level3 status-card">
 <h3 data-anchor-id="monthly-sea-surface-maps">Monthly Sea Surface Maps</h3>
 <div class="status-grid">
-<section id="sea-surface-temperature" class="level4 subcard-title status-subcard">
-<h4 class="subcard-title" data-anchor-id="sea-surface-temperature">Sea Surface Temperature</h4>
+<section id="sea-surface-temperature-2025" class="level4 subcard-title status-subcard">
+<h4 class="subcard-title" data-anchor-id="sea-surface-temperature-2025">Sea Surface Temperature <span id="sst-year">2025</span></h4>
 <div class="sst-slider">
 <p><span class="prev">‹ Previous</span> <span class="next">Next ›</span></p>
-<p><img src="https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_0.png" id="sst-image" class="img-fluid"></p>
+<p><img src="data/images/sst_placeholder.png" id="sst-dash-image" class="img-fluid"></p>
 </div>
 <p>Monthly mean sea surface temperature off Southern California. The Pacific Loggerhead Conservation Area is located within the black lines and the coast. Use arrows to view the last six months of measurements.</p>
 <p>Dataset: <a href="https://coastwatch.pfeg.noaa.gov/erddap/griddap/jplMURSST41mday.graph">GHRSST MUR</a></p>
 </section>
-<section id="sea-surface-temperature-anomaly" class="level4 subcard-title status-subcard">
-<h4 class="subcard-title" data-anchor-id="sea-surface-temperature-anomaly">Sea Surface Temperature Anomaly</h4>
+<section id="sea-surface-temperature-anomaly-2025" class="level4 subcard-title status-subcard">
+<h4 class="subcard-title" data-anchor-id="sea-surface-temperature-anomaly-2025">Sea Surface Temperature Anomaly <span id="sst-year">2025</span></h4>
 <div class="anom-slider">
 <p><span class="prev">‹ Previous</span> <span class="next">Next ›</span></p>
-<p><img src="https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_0.png" id="anom-image" class="img-fluid"></p>
+<p><img src="data/images/anom_placeholder.png" id="anom-dash-image" class="img-fluid"></p>
 </div>
 <p>Monthly mean surface temperature anomaly (deviation from the average temperature) off Southern California. The Pacific Loggerhead Conservation Area is located within the black lines and the coast. Use arrows to view the last six months of measurements.</p>
 <p>Dataset: <a href="https://coastwatch.pfeg.noaa.gov/erddap/griddap/jplMURSST41anommday.graph">GHRSST MUR</a></p>
@@ -323,29 +323,26 @@ document.addEventListener("DOMContentLoaded", () => {
     .catch(err => console.error("Error loading Heatwave JSON:", err));
 });
 </script>
+<!-- UPDATED SST IMAGES (local, dynamic like dashboard) -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const images = [
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_0.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_1.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_2.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_3.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_4.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_5.png"
-  ];
-
-  let index = 0;
-  const imgEl = document.getElementById("sst-image");
+  const sstImgEl = document.getElementById("sst-image");
   const prevBtn = document.querySelector(".sst-slider .prev");
   const nextBtn = document.querySelector(".sst-slider .next");
 
+  const year = new Date().getFullYear();
+  const months = ["03","04","05","06","07","08"];
+  const sstImages = months.map(m => `data/images/sst_${year}${m}16.png`);
+
+  let index = sstImages.length - 1;
+
   function updateImage() {
-    imgEl.src = images[index];
+    sstImgEl.src = sstImages[index];
     prevBtn.style.opacity = index === 0 ? 0.5 : 1;
-    nextBtn.style.opacity = index === images.length - 1 ? 0.5 : 1;
+    nextBtn.style.opacity = index === sstImages.length - 1 ? 0.5 : 1;
   }
 
-  prevBtn.addEventListener("click", (e) => {
+  prevBtn.addEventListener("click", e => {
     e.preventDefault();
     if (index > 0) {
       index--;
@@ -353,9 +350,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  nextBtn.addEventListener("click", (e) => {
+  nextBtn.addEventListener("click", e => {
     e.preventDefault();
-    if (index < images.length - 1) {
+    if (index < sstImages.length - 1) {
       index++;
       updateImage();
     }
@@ -364,40 +361,37 @@ document.addEventListener("DOMContentLoaded", () => {
   updateImage();
 });
 </script>
+<!-- UPDATED SST ANOMALY IMAGES (local, dynamic like dashboard) -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const anomImages = [
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_0.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_1.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_2.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_3.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_4.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_5.png"
-  ];
-
-  let anomIndex = 0;
   const anomImgEl = document.getElementById("anom-image");
-  const anomPrevBtn = document.querySelector(".anom-slider .prev");
-  const anomNextBtn = document.querySelector(".anom-slider .next");
+  const prevBtn = document.querySelector(".anom-slider .prev");
+  const nextBtn = document.querySelector(".anom-slider .next");
+
+  const year = new Date().getFullYear();
+  const months = ["03","04","05","06","07","08"];
+  const anomImages = months.map(m => `data/images/anom_${year}${m}16.png`);
+
+  let index = anomImages.length - 1;
 
   function updateAnomImage() {
-    anomImgEl.src = anomImages[anomIndex];
-    anomPrevBtn.style.opacity = anomIndex === 0 ? 0.5 : 1;
-    anomNextBtn.style.opacity = anomIndex === anomImages.length - 1 ? 0.5 : 1;
+    anomImgEl.src = anomImages[index];
+    prevBtn.style.opacity = index === 0 ? 0.5 : 1;
+    nextBtn.style.opacity = index === anomImages.length - 1 ? 0.5 : 1;
   }
 
-  anomPrevBtn.addEventListener("click", (e) => {
+  prevBtn.addEventListener("click", e => {
     e.preventDefault();
-    if (anomIndex > 0) {
-      anomIndex--;
+    if (index > 0) {
+      index--;
       updateAnomImage();
     }
   });
 
-  anomNextBtn.addEventListener("click", (e) => {
+  nextBtn.addEventListener("click", e => {
     e.preventDefault();
-    if (anomIndex < anomImages.length - 1) {
-      anomIndex++;
+    if (index < anomImages.length - 1) {
+      index++;
       updateAnomImage();
     }
   });
@@ -426,7 +420,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const ninoDate = document.getElementById("nino-date");
       const ninoSynopsis = document.getElementById("nino-synopsis");
       if (ninoStatus) ninoStatus.textContent = data.status || "Not available";
-      if (ninoDate) ninoDate.textContent = `Updated: ${data.date_print || "Not available"}`;
+      if (ninoDate) ninoDate.textContent = data.date_print || "Not available";
       if (ninoSynopsis) ninoSynopsis.textContent = data.synopsis?.trim() || "Not available";
     })
     .catch(err => console.error("Error loading El Niño JSON:", err));
