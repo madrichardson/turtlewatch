@@ -22,8 +22,6 @@ website:
         text: Conservation Area Status
       - href: data_dashboard.qmd
         text: Data Dashboard
-      - href: data_dashboard2.qmd
-        text: Data Dashboard2
 
 format:
   html:
