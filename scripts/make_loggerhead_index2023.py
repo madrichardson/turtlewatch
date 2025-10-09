@@ -103,6 +103,7 @@ def plot_index(my_data, png_name, png_dir):
 
 # Set Directories
 ROOT_DIR = Path(__file__).resolve().parents[1]
+WORK_DIR = ROOT_DIR / "work"
 IMG_DIR = ROOT_DIR / "data" / "images"
 JSON_DIR = ROOT_DIR / "data" / "json"
 RES_DIR = ROOT_DIR / "data" / "resources"
