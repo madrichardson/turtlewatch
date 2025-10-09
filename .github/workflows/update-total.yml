@@ -45,6 +45,9 @@ jobs:
       - name: Update closure history from Federal Register
         run: python scripts/update_Itca_closure.py
 
+      - name: Run Loggerhead Index update
+        run: python scripts/make_loggerhead_index2023.py
+
       - name: Commit updated data & images
         run: |
           git config --global user.name "github-actions[bot]"
