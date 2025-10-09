@@ -144,188 +144,6 @@ The information on this page may be used and redistributed freely, but is not in
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const radios = document.querySelectorAll("input[name='temp-unit']");
-  const table = document.querySelector(".status-subcard table");
-
-  if (!table) return; // safety check
-
-  const rows = table.querySelectorAll("tbody tr");
-  const tempCells = rows[0].querySelectorAll("td");
-  const anomalyCells = rows[1].querySelectorAll("td");
-
-  // Store Celsius baseline values (skip labels in col[0])
-  const celsiusTemps = Array.from(tempCells).slice(1).map(td => parseFloat(td.textContent));
-  const celsiusAnoms = Array.from(anomalyCells).slice(1).map(td => parseFloat(td.textContent));
-
-  // Add initial anomaly coloring
-  Array.from(anomalyCells).slice(1).forEach((td, i) => {
-    const val = celsiusAnoms[i];
-    td.classList.add(val >= 0 ? "positive" : "negative");
-  });
-
-  // Toggle conversion
-  radios.forEach(radio => {
-    radio.addEventListener("change", () => {
-      if (radio.checked) {
-        Array.from(tempCells).slice(1).forEach((td, i) => {
-          if (radio.value === "C") {
-            td.textContent = celsiusTemps[i].toFixed(1);
-          } else {
-            const tempF = (celsiusTemps[i] * 9/5) + 32;
-            td.textContent = tempF.toFixed(1);
-          }
-        });
-
-        Array.from(anomalyCells).slice(1).forEach((td, i) => {
-          if (radio.value === "C") {
-            td.textContent = celsiusAnoms[i].toFixed(1);
-          } else {
-            const anomF = celsiusAnoms[i] * 9/5; // convert delta
-            td.textContent = anomF.toFixed(1);
-          }
-        });
-      }
-    });
-  });
-
-  // === NEW: Load El Niño JSON ===
-  fetch("data/json/elnino_last.json")
-    .then(resp => resp.json())
-    .then(data => {
-      const ninoStatus = document.getElementById("nino-status");
-      const ninoDate = document.getElementById("nino-date");
-      const ninoSynopsis = document.getElementById("nino-synopsis");
-      if (ninoStatus) ninoStatus.textContent = data.status || "Not available";
-      if (ninoDate) ninoDate.textContent = `Updated: ${data.date_print || "Not available"}`;
-      if (ninoSynopsis) ninoSynopsis.textContent = data.synopsis || "Not available";
-    })
-    .catch(err => console.error("Error loading El Niño JSON:", err));
-
-  // === NEW: Load Marine Heatwave JSON ===
-  fetch("data/json/heatwave.json")
-    .then(resp => resp.json())
-    .then(data => {
-      const hwPeriod = document.getElementById("heat-period");
-      const hwRegion = document.getElementById("heat-region");
-      const hwStatus = document.getElementById("heat-status");
-      if (hwPeriod) hwPeriod.textContent = data.heat_period || "Not available";
-      if (hwRegion) hwRegion.textContent = data.heat_region || "Not available";
-      if (hwStatus) hwStatus.textContent = data.heat_status || "Not available";
-    })
-    .catch(err => console.error("Error loading Heatwave JSON:", err));
-});
-</script>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const images = [
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_0.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_1.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_2.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_3.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_4.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/sst_5.png"
-  ];
-
-  let index = 0;
-  const imgEl = document.getElementById("sst-image");
-  const prevBtn = document.querySelector(".sst-slider .prev");
-  const nextBtn = document.querySelector(".sst-slider .next");
-
-  function updateImage() {
-    imgEl.src = images[index];
-    prevBtn.style.opacity = index === 0 ? 0.5 : 1;
-    nextBtn.style.opacity = index === images.length - 1 ? 0.5 : 1;
-  }
-
-  prevBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    if (index > 0) {
-      index--;
-      updateImage();
-    }
-  });
-
-  nextBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    if (index < images.length - 1) {
-      index++;
-      updateImage();
-    }
-  });
-
-  updateImage();
-});
-</script>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const anomImages = [
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_0.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_1.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_2.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_3.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_4.png",
-    "https://coastwatch.pfeg.noaa.gov/elnino/images_tw/anom_5.png"
-  ];
-
-  let anomIndex = 0;
-  const anomImgEl = document.getElementById("anom-image");
-  const anomPrevBtn = document.querySelector(".anom-slider .prev");
-  const anomNextBtn = document.querySelector(".anom-slider .next");
-
-  function updateAnomImage() {
-    anomImgEl.src = anomImages[anomIndex];
-    anomPrevBtn.style.opacity = anomIndex === 0 ? 0.5 : 1;
-    anomNextBtn.style.opacity = anomIndex === anomImages.length - 1 ? 0.5 : 1;
-  }
-
-  anomPrevBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    if (anomIndex > 0) {
-      anomIndex--;
-      updateAnomImage();
-    }
-  });
-
-  anomNextBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    if (anomIndex < anomImages.length - 1) {
-      anomIndex++;
-      updateAnomImage();
-    }
-  });
-
-  updateAnomImage();
-});
-</script>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const dateEl = document.querySelector(".status-date");
-  if (dateEl) {
-    const today = new Date();
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    dateEl.textContent = today.toLocaleDateString(undefined, options);
-  }
-});
-</script>
-
-
-
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -354,6 +172,153 @@ document.addEventListener("DOMContentLoaded", () => {
       if (hwStatus) hwStatus.textContent = data.heat_status?.trim() || "Not available";
     })
     .catch(err => console.error("Error loading Heatwave JSON:", err));
+
+  // === Load and render SST Table ===
+  const container = document.getElementById("sst-table-container");
+  if (container) {
+    fetch("data/json/latest.json")
+      .then(resp => resp.json())
+      .then(data => {
+        const keys = Object.keys(data).sort((a, b) => Number(b.slice(1)) - Number(a.slice(1)));
+        const months = keys.map(k => data[k].month || "");
+        const sstVals = keys.map(k => parseFloat(data[k].sst));
+        const anomVals = keys.map(k => parseFloat(data[k].anom));
+
+        const table = document.createElement("table");
+        table.className = "table table-condensed table-striped";
+
+        // Header
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+        headerRow.appendChild(document.createElement("th"));
+        months.forEach(m => {
+          const th = document.createElement("th");
+          th.textContent = m;
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        // Body
+        const tbody = document.createElement("tbody");
+
+        const tempRow = document.createElement("tr");
+        const tempLabel = document.createElement("td");
+        tempLabel.textContent = "Temperature";
+        tempRow.appendChild(tempLabel);
+        sstVals.forEach(v => {
+          const td = document.createElement("td");
+          td.textContent = v.toFixed(1);
+          tempRow.appendChild(td);
+        });
+        tbody.appendChild(tempRow);
+
+        const anomRow = document.createElement("tr");
+        const anomLabel = document.createElement("td");
+        anomLabel.textContent = "Anomaly";
+        anomRow.appendChild(anomLabel);
+        anomVals.forEach(v => {
+          const td = document.createElement("td");
+          td.textContent = v.toFixed(1);
+          td.style.fontWeight = "bold";
+          td.style.color = v > 0 ? "red" : v < 0 ? "blue" : "black";
+          anomRow.appendChild(td);
+        });
+        tbody.appendChild(anomRow);
+
+        table.appendChild(tbody);
+        container.innerHTML = "";
+        container.appendChild(table);
+
+        // °C/°F toggle logic
+        const radios = document.querySelectorAll("input[name='temp-unit']");
+        radios.forEach(radio => {
+          radio.addEventListener("change", () => {
+            const temps = table.querySelectorAll("tbody tr:first-child td:not(:first-child)");
+            const anoms = table.querySelectorAll("tbody tr:last-child td:not(:first-child)");
+
+            temps.forEach((td, i) => {
+              const c = sstVals[i];
+              td.textContent = radio.value === "C" ? c.toFixed(1) : (c * 9/5 + 32).toFixed(1);
+            });
+            anoms.forEach((td, i) => {
+              const c = anomVals[i];
+              td.textContent = radio.value === "C" ? c.toFixed(1) : (c * 9/5).toFixed(1);
+            });
+          });
+        });
+      })
+      .catch(err => {
+        console.error("Error loading SST table JSON:", err);
+        container.innerHTML = "<p style='color:red;'>Error loading temperature data.</p>";
+      });
+  }
+
+  // === SST SLIDER (local data/images/) ===
+  const sstImgEl = document.getElementById("sst-dash-image");
+  const sstPrevBtn = document.querySelector(".sst-slider .prev");
+  const sstNextBtn = document.querySelector(".sst-slider .next");
+  const sstYearTitle = document.getElementById("sst-year");
+
+  const year = new Date().getFullYear();
+  const months = ["03","04","05","06","07","08"];
+  const sstImages = months.map(m => `data/images/sst_${year}${m}16.png`);
+  let sstIndex = sstImages.length - 1;
+
+  function updateSST() {
+    sstImgEl.src = sstImages[sstIndex];
+    sstPrevBtn.style.opacity = sstIndex === 0 ? 0.5 : 1;
+    sstNextBtn.style.opacity = sstIndex === sstImages.length - 1 ? 0.5 : 1;
+  }
+
+  if (sstPrevBtn && sstNextBtn) {
+    sstPrevBtn.addEventListener("click", e => {
+      e.preventDefault();
+      if (sstIndex > 0) sstIndex--;
+      updateSST();
+    });
+    sstNextBtn.addEventListener("click", e => {
+      e.preventDefault();
+      if (sstIndex < sstImages.length - 1) sstIndex++;
+      updateSST();
+    });
+  }
+  updateSST();
+
+  // === ANOMALY SLIDER (local data/images/) ===
+  const anomImgEl = document.getElementById("anom-image");
+  const anomPrevBtn = document.querySelector(".anom-slider .prev");
+  const anomNextBtn = document.querySelector(".anom-slider .next");
+  const anomImages = months.map(m => `data/images/anom_${year}${m}16.png`);
+  let anomIndex = anomImages.length - 1;
+
+  function updateAnom() {
+    anomImgEl.src = anomImages[anomIndex];
+    anomPrevBtn.style.opacity = anomIndex === 0 ? 0.5 : 1;
+    anomNextBtn.style.opacity = anomIndex === anomImages.length - 1 ? 0.5 : 1;
+  }
+
+  if (anomPrevBtn && anomNextBtn) {
+    anomPrevBtn.addEventListener("click", e => {
+      e.preventDefault();
+      if (anomIndex > 0) anomIndex--;
+      updateAnom();
+    });
+    anomNextBtn.addEventListener("click", e => {
+      e.preventDefault();
+      if (anomIndex < anomImages.length - 1) anomIndex++;
+      updateAnom();
+    });
+  }
+  updateAnom();
+
+  // === Date update (top banner) ===
+  const dateEl = document.querySelector(".status-date");
+  if (dateEl) {
+    const today = new Date();
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    dateEl.textContent = today.toLocaleDateString(undefined, options);
+  }
 
 });
 </script>
