@@ -19,6 +19,7 @@ import pandas as pd
 import requests
 import sys
 import io
+import json
 
 # Define a function to get the latest available date from ERDDAP
 def get_latest_erddap_date(session: requests.Session) -> datetime:
@@ -183,6 +184,35 @@ def main():
         )
     else:
         print("Maps are up to date.")
+
+    
+    # --- Create TOTAL JSON (web_data.json) ---
+    print("Creating web_data.json summary...")
+    try:
+        from datetime import datetime
+        df = pd.read_csv(RES_DIR / CONFIG['RESOURCE_FILE'])
+        latest_index = float(df["indicator"].iloc[-1])
+        alert_status = "Alert" if latest_index >= 0.77 else "No Alert"
+        forecast_date = datetime.now().strftime("%B %Y")
+        update_date = datetime.now().strftime("%d %b, %Y")
+        web_data = {
+            "alert": alert_status,
+            "fc_date": forecast_date,
+            "update_date": update_date,
+            "new_index": f"{latest_index:.2f}"
+        }
+
+        json_dir = CONFIG['ROOT_DIR'] / "data" / "json"
+        json_dir.mkdir(parents=True, exist_ok=True)
+        json_path = json_dir / "web_data.json"
+        with open(json_path, "w") as f:
+            json.dump(web_data, f, indent=4)
+
+        print(f"web_data.json created at {json_path}")
+        print(json.dumps(web_data, indent=4))
+    except Exception as e:
+        print(f"Failed to create web_data.json: {e}")
+
 
 
 if __name__ == "__main__":
