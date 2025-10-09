@@ -46,7 +46,7 @@ jobs:
         run: python scripts/update_Itca_closure.py
 
       - name: Run Loggerhead Index update
-        run: python scripts/make_loggerhead_index2023.py
+        run: python scripts/make_loggerhead_index2023.py -u -p -j
 
       - name: Commit updated data & images
         run: |
