@@ -84,10 +84,10 @@ Dataset: [GHRSST MUR](https://coastwatch.pfeg.noaa.gov/erddap/search/index.html?
 
 #### TOTAL Time Series {.subcard-title}
 :::{.status-info}
-- **Most recent forecast:** September 2025  
-- **Status:** No Alert  
-- **Indicator value:** 0.11  
-- **Updated:** 04 Sep 2025  
+- **Most recent forecast:** <span id="total-fcdate">Loading...</span>
+- **Status:** <span id="total-status">Loading...</span>
+- **Indicator value:** <span id="total-index">Loading...</span>
+- **Updated:** <span id="total-updated">Loading...</span>
 :::
 
 This year’s **Temperature Observations To Avoid Loggerhead (TOTAL)** values for the Loggerhead Conservation Area. An alert is indicated when indicator values (the timeseries) exceed a threshold of **0.77 (red horizontal line)**.
@@ -253,6 +253,22 @@ document.addEventListener("DOMContentLoaded", () => {
         container.innerHTML = "<p style='color:red;'>Error loading temperature data.</p>";
       });
   }
+
+  // === Load TOTAL Loggerhead Index JSON ===
+  fetch("data/json/web_data.json")
+    .then(resp => resp.json())
+    .then(data => {
+      const fcEl = document.getElementById("total-fcdate");
+      const stEl = document.getElementById("total-status");
+      const idxEl = document.getElementById("total-index");
+      const updEl = document.getElementById("total-updated");
+
+      if (fcEl) fcEl.textContent = data.fc_date || "Not available";
+      if (stEl) stEl.textContent = data.alert || "Not available";
+      if (idxEl) idxEl.textContent = data.new_index || "Not available";
+      if (updEl) updEl.textContent = data.update_date || "Not available";
+    })
+    .catch(err => console.error("Error loading TOTAL index JSON:", err));
 
   // === SST SLIDER (local data/images/) ===
   const sstImgEl = document.getElementById("sst-dash-image");
