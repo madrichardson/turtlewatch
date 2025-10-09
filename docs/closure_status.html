@@ -245,6 +245,61 @@ Dataset: <a href="https://coastwatch.pfeg.noaa.gov/erddap/search/index.html?page
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
+  // === Load Closure Status from Itca_closure.csv ===
+  fetch("data/resources/Itca_closure.csv")
+    .then(response => response.text())
+    .then(text => {
+      const rows = text.trim().split("\n").map(r => r.split(","));
+      const headers = rows.shift().map(h => h.trim());
+      const startIdx = headers.findIndex(h => /start/i.test(h));
+      const endIdx = headers.findIndex(h => /end/i.test(h));
+
+      if (startIdx === -1 || endIdx === -1) {
+        console.error("Start or End column not found in closure CSV");
+        return;
+      }
+
+      // Find most recent closure period
+      const recent = rows
+        .map(r => ({
+          start: new Date(r[startIdx]),
+          end: new Date(r[endIdx]),
+        }))
+        .filter(d => !isNaN(d.start) && !isNaN(d.end))
+        .sort((a, b) => b.start - a.start)[0];
+
+      if (!recent) {
+        console.warn("No valid closure records found.");
+        return;
+      }
+
+      const now = new Date();
+      const banner = document.querySelector(".status-banner");
+      const textEl = document.querySelector(".status-text");
+      const dateEl = document.querySelector(".status-date");
+
+      if (now < recent.start) {
+        banner.classList.remove("success");
+        banner.classList.add("alert-upcoming");
+        textEl.textContent = "Closure Alert: Will take effect soon";
+      } else if (now >= recent.start && now <= recent.end) {
+        banner.classList.remove("success");
+        banner.classList.add("alert-active");
+        textEl.textContent = "Closure is in effect";
+      } else {
+        banner.classList.remove("alert-active", "alert-upcoming");
+        banner.classList.add("success");
+        textEl.textContent = "No closure in effect";
+      }
+
+      if (dateEl) {
+        const opts = { year: "numeric", month: "long", day: "numeric" };
+        dateEl.textContent = "Updated " + now.toLocaleDateString(undefined, opts);
+      }
+    })
+    .catch(err => console.error("Error loading closure CSV:", err));
+
+  
   // === Load El Niño JSON ===
   fetch("data/json/elnino_last.json")
     .then(resp => resp.json())
