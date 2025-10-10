@@ -254,56 +254,65 @@ document.addEventListener("DOMContentLoaded", () => {
     })
     .catch(err => console.error("Error loading El Niño JSON:", err));
 
-  // === Load Marine Heatwave JSON ===
-  fetch("data/json/heatwave.json")
-    .then(resp => resp.json())
-    .then(data => {
-      const hwPeriod = document.getElementById("heat-period");
-      const hwDate   = document.getElementById("heat-date");
-      const hwStatus = document.getElementById("heat-status");
-      const hwLink   = document.getElementById("heat-link");
+  // === Load Marine Heatwave JSON (regions only) ===
+fetch("data/json/heatwave.json")
+  .then(resp => resp.json())
+  .then(data => {
+    const hwPeriod = document.getElementById("heat-period");
+    const hwDate   = document.getElementById("heat-date");
+    const hwLink   = document.getElementById("heat-link");
 
-      if (hwPeriod) hwPeriod.textContent = data.heat_period || "Not available";
-      if (hwDate)   hwDate.textContent   = data.heat_date   || "Not available";
-      if (hwLink && data.source_url) hwLink.href = data.source_url;
+    if (hwPeriod) hwPeriod.textContent = data.heat_period || "Not available";
+    if (hwDate)   hwDate.textContent   = data.heat_date   || "Not available";
+    if (hwLink && data.source_url) hwLink.href = data.source_url;
 
-      // Region-aware table
-      const table     = document.getElementById("mhw-table");
-      const tbody     = table ? table.querySelector("tbody") : null;
-      const npText    = (data.north_pacific || "").trim();
-      const tpText    = (data.tropical_pacific || "").trim();
-      const hasRegion = Boolean(npText || tpText);
+    const table = document.getElementById("mhw-table");
+    const tbody = table ? table.querySelector("tbody") : null;
+    if (!table || !tbody) return;
 
-      if (hasRegion && table && tbody) {
-        // Clear any previous rows
-        tbody.innerHTML = "";
+    const npText = (data.north_pacific || "").trim();
+    const tpText = (data.tropical_pacific || "").trim();
 
-        if (npText) {
-          const tr = document.createElement("tr");
-          const r1 = document.createElement("td"); r1.textContent = "North Pacific";
-          const r2 = document.createElement("td"); r2.textContent = npText;
-          tr.appendChild(r1); tr.appendChild(r2);
-          tbody.appendChild(tr);
-        }
+    // Clear existing rows
+    tbody.innerHTML = "";
 
-        if (tpText) {
-          const tr = document.createElement("tr");
-          const r1 = document.createElement("td"); r1.textContent = "Tropical Pacific";
-          const r2 = document.createElement("td"); r2.textContent = tpText;
-          tr.appendChild(r1); tr.appendChild(r2);
-          tbody.appendChild(tr);
-        }
+    // Add rows only for the two regions we care about
+    if (npText) {
+      const tr = document.createElement("tr");
+      const c1 = document.createElement("td"); c1.textContent = "North Pacific";
+      const c2 = document.createElement("td"); c2.textContent = npText;
+      tr.appendChild(c1); tr.appendChild(c2);
+      tbody.appendChild(tr);
+    }
+    if (tpText) {
+      const tr = document.createElement("tr");
+      const c1 = document.createElement("td"); c1.textContent = "Tropical Pacific";
+      const c2 = document.createElement("td"); c2.textContent = tpText;
+      tr.appendChild(c1); tr.appendChild(c2);
+      tbody.appendChild(tr);
+    }
 
-        // Show table, hide combined fallback text
-        table.style.display = "";
-        if (hwStatus) hwStatus.style.display = "none";
-      } else {
-        // Fallback to combined text
-        if (hwStatus) hwStatus.textContent = (data.heat_status || "Not available").trim();
-        if (table) table.style.display = "none";
-      }
-    })
-    .catch(err => console.error("Error loading Heatwave JSON:", err));
+    // If neither region is present, show a single “Not available” row
+    if (!npText && !tpText) {
+      const tr = document.createElement("tr");
+      const c1 = document.createElement("td"); c1.textContent = "North Pacific";
+      const c2 = document.createElement("td"); c2.textContent = "Not available";
+      tr.appendChild(c1); tr.appendChild(c2);
+      tbody.appendChild(tr);
+
+      const tr2 = document.createElement("tr");
+      const d1 = document.createElement("td"); d1.textContent = "Tropical Pacific";
+      const d2 = document.createElement("td"); d2.textContent = "Not available";
+      tr2.appendChild(d1); tr2.appendChild(d2);
+      tbody.appendChild(tr2);
+    }
+
+    // Show the table always; we’re not using heat_status anymore
+    table.style.display = "";
+    const hwStatus = document.getElementById("heat-status");
+    if (hwStatus) hwStatus.style.display = "none";
+  })
+  .catch(err => console.error("Error loading Heatwave JSON:", err));
 
   // === Load and render SST Table ===
   const container = document.getElementById("sst-table-container");
