@@ -1,4 +1,3 @@
-
 """Update TOTAL heatwave status from the CPS website.
 
 This script scrapes the latest marine heatwave forecast from the NOAA PSL website,
@@ -64,84 +63,61 @@ def _text(elem) -> str:
     return elem.get_text(" ", strip=True) if elem else ""
 
 
-def _find_region_paragraph(soup: BeautifulSoup, region_pattern: re.Pattern) -> Optional[str]:
+def grab_region_paragraph(soup: BeautifulSoup, label_regex: str) -> str:
     """
-    Find a <strong> tag whose text matches region_pattern (e.g., 'Tropical Pacific' or 'North Pacific'),
-    then return the full text of its parent paragraph.
+    Find a <strong> whose text matches label_regex (e.g., '^Tropical\\s+Pacific'),
+    then return the full paragraph text containing it. Returns '' if not found.
     """
-    strong = soup.find('strong', string=region_pattern)
-    if strong and strong.parent:
-        # If the <strong> lives inside a <p>, take the whole paragraph text
-        p = strong.find_parent('p')
-        if p:
-            return _text(p)
-        # Fallback: take the immediate parent's text
-        return _text(strong.parent)
-    return None
+    strong = soup.find('strong', string=re.compile(label_regex, re.I))
+    if not strong:
+        return ""
+    p = strong.find_parent('p')
+    if p:
+        return p.get_text(" ", strip=True)
+    return strong.parent.get_text(" ", strip=True) if strong.parent else ""
+
 
 
 def get_latest_heatwave_data(session: requests.Session, url: str) -> Dict[str, Any]:
-    """Scrapes heatwave narrative and dates from the website.
-
-    Args:
-        session (requests.Session): The requests session object to use for the HTTP request.
-        url (str): The URL of the website to scrape.
-
-    Returns:
-        Dict[str, Any]: Dictionary with date/period + region summaries.
-    """
+    """Scrapes heatwave narrative and dates from the website and returns both regions."""
     html = session.get(url, timeout=30)
     html.raise_for_status()
     soup = BeautifulSoup(html.text, 'html.parser')
 
-    # --- Date / period (as in your original approach) ---
-    try:
-        # These headings appear on the page; collect their <strong> values
-        heatwave_date = soup.select_one('h5:-soup-contains("Forecast initial time") strong')
-        heatwave_period = soup.select_one('h5:-soup-contains("Forecast period") strong')
-        heatwave_date = _text(heatwave_date)
-        heatwave_period = _text(heatwave_period)
-    except Exception:
-        print("Could not find Forecast initial time / Forecast period.", file=sys.stderr)
-        heatwave_date = ""
-        heatwave_period = ""
+    # Date / Period
+    heatwave_date_el = soup.select_one('h5:-soup-contains("Forecast initial time") strong')
+    heatwave_period_el = soup.select_one('h5:-soup-contains("Forecast period") strong')
+    heatwave_date = heatwave_date_el.get_text(strip=True) if heatwave_date_el else ""
+    heatwave_period = heatwave_period_el.get_text(strip=True) if heatwave_period_el else ""
 
-    # --- Region paragraphs ---
-    tp_pat = re.compile(r'\bTropical Pacific\b', re.I)
-    np_pat = re.compile(r'\bNorth Pacific\b', re.I)
+    # Regions (explicit fields)
+    tropical_pacific = grab_region_paragraph(soup, r'^Tropical\s+Pacific')
+    north_pacific    = grab_region_paragraph(soup, r'^North\s+Pacific')
 
-    tropical_pacific = _find_region_paragraph(soup, tp_pat) or ""
-    north_pacific    = _find_region_paragraph(soup, np_pat) or ""
-
+    # Fallback: if neither found, try any paragraph mentioning "Pacific"
     if not tropical_pacific and not north_pacific:
-        # Fallback to any paragraph containing "Pacific" if region headings moved
-        any_pacific = soup.find('p', string=re.compile(r'Pacific', re.I))
-        if any_pacific:
-            txt = _text(any_pacific)
-            # Heuristic split if both mentioned in one paragraph
-            if re.search(tp_pat, txt) and re.search(np_pat, txt):
+        any_p = soup.find('p', string=re.compile(r'Pacific', re.I))
+        if any_p:
+            txt = any_p.get_text(" ", strip=True)
+            if re.search(r'\bTropical\s+Pacific\b', txt, re.I):
                 tropical_pacific = txt
-                north_pacific = txt
-            elif re.search(tp_pat, txt):
-                tropical_pacific = txt
-            elif re.search(np_pat, txt):
+            if re.search(r'\bNorth\s+Pacific\b', txt, re.I):
                 north_pacific = txt
 
-    # Backward-compat combined status string
+    # Backward-compat combined status
     parts = []
     if north_pacific:
-        parts.append(f"North Pacific: {north_pacific}")
+        parts.append(f"North Pacific - {north_pacific}")
     if tropical_pacific:
-        parts.append(f"Tropical Pacific: {tropical_pacific}")
+        parts.append(f"Tropical Pacific - {tropical_pacific}")
     heat_status = " | ".join(parts) if parts else "No regional summaries found."
 
     return {
-        'heat_date': heatwave_date,
-        'heat_period': heatwave_period,
-        'north_pacific': north_pacific,
-        'tropical_pacific': tropical_pacific,
-        'heat_status': heat_status,  # backward-compat combined text
-        'source_url': url
+        "heat_status": heat_status,
+        "heat_date": heatwave_date,
+        "heat_period": heatwave_period,
+        "north_pacific": north_pacific,
+        "tropical_pacific": tropical_pacific
     }
 
 
