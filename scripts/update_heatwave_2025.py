@@ -64,7 +64,8 @@ def _text(elem) -> str:
 
 
 # Only treat these as region headers (stop markers)
-REGION_LABELS_REGEX = r'(Tropical\s+Pacific|North\s+Pacific)'
+REGION_LABELS_REGEX = r'(Tropical\s+Pacific|North\s+Pacific|North\s+Atlantic|Southern\s+Ocean)'
+
 
 def grab_region_paragraph(soup: BeautifulSoup, label_regex: str) -> str:
     """
@@ -79,14 +80,8 @@ def grab_region_paragraph(soup: BeautifulSoup, label_regex: str) -> str:
         return p.get_text(" ", strip=True)
     return strong.parent.get_text(" ", strip=True) if strong.parent else ""
 
+
 def slice_region_block(raw_text: str, region_label: str) -> str:
-    """
-    From a raw paragraph that may include multiple regions, return only the text
-    belonging to `region_label`:
-      - start at 'region_label' followed by -, –, or :
-      - stop just before the NEXT *Tropical Pacific* or *North Pacific* label
-      - strip the leading label/punctuation
-    """
     if not raw_text:
         return ""
     text = " ".join(raw_text.split())
@@ -95,10 +90,10 @@ def slice_region_block(raw_text: str, region_label: str) -> str:
     if not start:
         return ""
 
-    sub = text[start.end():]  # after "Region - "
+    sub = text[start.end():]
 
-    # STOP only at the other allowed region labels
-    next_region = re.search(rf'\b{REGION_LABELS_REGEX}\b\s*[--:]\s*', sub, re.I)
+    # stop at ANY next region header (now includes North Atlantic / Southern Ocean)
+    next_region = re.search(rf'\b{REGION_LABELS_REGEX}\b\s*[-–:]\s*', sub, re.I)
     if next_region:
         sub = sub[:next_region.start()]
 
