@@ -149,33 +149,39 @@ def main():
     # Robust date parsing (won’t crash on “Unknown”)
     new_date_obj = safe_parse_date(new_data.get('heat_date'))
 
-    # Get local data date
+    # Get local data date + load full local JSON (fallback to empty)
     local_data_path = JSON_DIR / CONFIG['OUT_FILE_NAME']
     local_date_obj = datetime(1990, 1, 1)
+    local_data = {}
 
     try:
         with open(local_data_path, 'r') as f:
             local_data = json.load(f)
-            local_date_obj = safe_parse_date(local_data.get('heat_date'))
+            local_date_obj = safe_parse_date(local_data.get('heat_date'))  # use your safe parse if added
     except FileNotFoundError:
         print(f"Local file {local_data_path} not found. A new file will be created.")
     except (json.JSONDecodeError, KeyError) as e:
         print(f"Error reading or parsing local JSON file: {e}", file=sys.stderr)
 
+    # --- NEW: also compare content, not just date ---
+    old_comp = json.dumps(local_data, sort_keys=True, ensure_ascii=False)
+    new_comp = json.dumps(new_data,  sort_keys=True, ensure_ascii=False)
+    contents_differ = (old_comp != new_comp)
+
     print(f"Local data date: {local_date_obj.strftime('%Y-%m-%d')}")
     print(f"Website data date: {new_date_obj.strftime('%Y-%m-%d')}")
+    print(f"Content changed: {contents_differ}")
 
-    if local_date_obj.date() == new_date_obj.date() and not args.overwrite:
+    # Only skip if same date AND same content AND not forcing overwrite
+    if (not args.overwrite) and (local_date_obj.date() == new_date_obj.date()) and (not contents_differ):
         print("Heatwave info is up to date. No action needed.")
     else:
-        print("New heatwave data available. Updating files...")
+        print("New heatwave data available (date or content). Updating files...")
 
-        # Write main JSON
         with open(local_data_path, "w") as outfile:
             json.dump(new_data, outfile, indent=4)
         print(f"Saved new data to {local_data_path}")
 
-        # Dated copy
         dated_ofile = CONFIG['DATED_OUT_FILE_TEMPLATE'].format(new_date_obj.strftime('%Y%m'))
         dated_path = JSON_DIR / dated_ofile
         with open(dated_path, "w") as outfile:
