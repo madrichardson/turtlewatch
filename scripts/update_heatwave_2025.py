@@ -1,3 +1,4 @@
+
 """Update TOTAL heatwave status from the CPS website.
 
 This script scrapes the latest marine heatwave forecast from the NOAA PSL website,
@@ -50,6 +51,16 @@ def send_to_erddap(work_dir: Path, infile: Path, erddap_path: str, ofile: str) -
     return False
 
 
+def safe_parse_date(s, fallback=datetime(1990, 1, 1)):
+    """Parse a date string safely; return fallback on failure (handles 'Unknown', '', None)."""
+    if not s or not isinstance(s, str):
+        return fallback
+    try:
+        return parse(s, fuzzy=True)
+    except Exception:
+        return fallback
+
+
 def get_latest_heatwave_data(session: requests.Session, url: str) -> Dict[str, Any]:
     """Scrapes heatwave narrative and dates from the website.
 
@@ -59,25 +70,18 @@ def get_latest_heatwave_data(session: requests.Session, url: str) -> Dict[str, A
 
     Returns:
         Dict[str, Any]: A dictionary containing the heatwave status, date, and forecast period.
-
-    Raises:
-        requests.exceptions.RequestException: If the HTTP request fails.
-        AttributeError: If key HTML elements are not found on the page.
     """
     html = session.get(url)
     html.raise_for_status()
     soup = BeautifulSoup(html.text, 'html.parser')
     
     # Use more specific selectors or compile patterns
-    pattern = re.compile(r'North Pacific|Pacific')
+    pattern = re.compile(r'North Pacific|Pacific', re.I)
     
     try:
         heatwave_text = soup.find('strong', string=pattern).parent.text.strip()
-        
-        # Using more robust CSS selectors to find the date and period
         heatwave_date = soup.select_one('h5:-soup-contains("Forecast initial time") strong').text.strip()
         heatwave_period = soup.select_one('h5:-soup-contains("Forecast period") strong').text.strip()
-
     except AttributeError:
         print("Required HTML elements not found on the page.", file=sys.stderr)
         sys.exit(1)
@@ -92,7 +96,7 @@ def get_latest_heatwave_data(session: requests.Session, url: str) -> Dict[str, A
 def main():
     """Controls and coordinates updates to the TOTAL heatwave status."""
     
-    # Configuration
+    # Configuration (El Niño style: single ROOT_DIR -> data/json)
     CONFIG = {
         'ROOT_DIR': Path.cwd().resolve(),
         'WORK_DIR_NAME': 'work',
@@ -106,6 +110,7 @@ def main():
     ROOT_DIR = CONFIG['ROOT_DIR']
     WORK_DIR = ROOT_DIR / CONFIG['WORK_DIR_NAME']
     JSON_DIR = ROOT_DIR / CONFIG['DATA_DIR_NAME'] / CONFIG['JSON_DIR_NAME']
+    JSON_DIR.mkdir(parents=True, exist_ok=True)  # ensure /data/json exists
 
     # Argument parsing
     parser = argparse.ArgumentParser(description='Update TOTAL heatwave status. Use -o to force overwrite.')
@@ -117,7 +122,8 @@ def main():
     with requests.Session() as session:
         new_data = get_latest_heatwave_data(session, CONFIG['SCRAPE_URL'])
     
-    new_date_obj = parse(new_data['heat_date'])
+    # Robust parse (won't crash on 'Unknown')
+    new_date_obj = safe_parse_date(new_data.get('heat_date'))
 
     # Get local data date
     local_data_path = JSON_DIR / CONFIG['OUT_FILE_NAME']
@@ -126,7 +132,7 @@ def main():
     try:
         with open(local_data_path, 'r') as f:
             local_data = json.load(f)
-            local_date_obj = parse(local_data.get('heat_date', '1990-01-01'))
+            local_date_obj = safe_parse_date(local_data.get('heat_date'))
     except FileNotFoundError:
         print(f"Local file {local_data_path} not found. A new file will be created.")
     except (json.JSONDecodeError, KeyError) as e:
@@ -145,10 +151,6 @@ def main():
         with open(local_data_path, "w") as outfile:
             json.dump(new_data, outfile, indent=4)
         print(f"Saved new data to {local_data_path}")
-
-        # Send to ERDDAP
-        remote_path = Path(CONFIG['ERDDAP_PATH'])
-        ## send_to_erddap(JSON_DIR, local_data_path.name, remote_path.as_posix(), local_data_path.name)
 
         # Save a dated copy
         dated_ofile = CONFIG['DATED_OUT_FILE_TEMPLATE'].format(new_date_obj.strftime('%Y%m'))
