@@ -1,9 +1,9 @@
 
-"""Update TOTAL heatwave status from the CPS website.
+"""Update TOTAL heatwave status from the NOAA PSL Marine Heatwave page.
 
-This script scrapes the latest marine heatwave forecast from the NOAA PSL website,
-compares it to the current data, and updates the necessary JSON files if new
-information is available.
+Scrapes the latest Marine Heatwave forecasts from the NOAA PSL “Current Report”
+section, capturing both Tropical Pacific and North Pacific narratives, along
+with forecast dates and periods.
 """
 
 from bs4 import BeautifulSoup
@@ -23,11 +23,10 @@ from typing import Dict, Any
 def send_to_erddap(work_dir: Path, infile: Path, erddap_path: str, ofile: str) -> bool:
     """Sends files from the production server to an ERDDAP server via SCP."""
     cmd = [
-        'scp',
+        "scp",
         str(work_dir / infile),
-        f'cwatch@192.168.31.15:{os.path.join(erddap_path, ofile)}'
+        f"cwatch@192.168.31.15:{os.path.join(erddap_path, ofile)}"
     ]
-    
     print(f"Executing: {' '.join(cmd)}")
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
@@ -42,25 +41,37 @@ def send_to_erddap(work_dir: Path, infile: Path, erddap_path: str, ofile: str) -
 
 
 def get_latest_heatwave_data(session: requests.Session, url: str) -> Dict[str, Any]:
-    """Scrapes heatwave narrative and dates from the NOAA PSL Marine Heatwaves site.
-
-    Collects both Tropical Pacific and North Pacific text summaries.
-    """
+    """Scrapes Marine Heatwave information from the NOAA PSL “Current Report” section."""
     html = session.get(url)
     html.raise_for_status()
     soup = BeautifulSoup(html.text, "html.parser")
 
-    # --- Extract forecast period ---
-    forecast_period = None
-    for strong in soup.find_all("strong"):
-        if "Forecast period" in strong.text:
-            forecast_period = strong.next_sibling.strip()
-            break
+    # Locate the "Current Report" section
+    report_div = soup.find("div", id="report")
+    if not report_div:
+        print("Could not find the '#report' section on the page.", file=sys.stderr)
+        sys.exit(1)
 
-    # --- Find region summaries ---
+    # --- Extract Forecast Dates ---
+    forecast_period = None
+    forecast_date = None
+
+    # h5 tags with "Forecast period" and "Forecast initial time"
+    for h5 in report_div.find_all("h5"):
+        txt = h5.text.strip()
+        if "Forecast period" in txt:
+            strong = h5.find("strong")
+            if strong:
+                forecast_period = strong.text.strip()
+        elif "Forecast initial time" in txt:
+            strong = h5.find("strong")
+            if strong:
+                forecast_date = strong.text.strip()
+
+    # --- Extract Regional Summaries ---
     tropical_text = ""
     north_text = ""
-    for h3 in soup.find_all("h3"):
+    for h3 in report_div.find_all("h3"):
         title = h3.text.strip()
         if "Tropical Pacific" in title:
             p = h3.find_next("p")
@@ -72,10 +83,9 @@ def get_latest_heatwave_data(session: requests.Session, url: str) -> Dict[str, A
                 north_text = p.text.strip()
 
     if not tropical_text and not north_text:
-        print("Warning: No Tropical or North Pacific summaries found.", file=sys.stderr)
+        print("No Tropical or North Pacific text found in #report.", file=sys.stderr)
 
-    # --- Combine both summaries for output ---
-    combined_summary = ""
+    # --- Combine summaries ---
     if tropical_text and north_text:
         combined_summary = f"Tropical Pacific: {tropical_text}\n\nNorth Pacific: {north_text}"
     elif tropical_text:
@@ -85,27 +95,16 @@ def get_latest_heatwave_data(session: requests.Session, url: str) -> Dict[str, A
     else:
         combined_summary = "No current marine heatwave summaries found."
 
-    # --- Get date of latest update ---
-    date_elem = soup.find(string=re.compile("Forecast initial time"))
-    heatwave_date = "Unknown"
-    if date_elem:
-        parent = soup.find("h5", string=re.compile("Forecast initial time"))
-        if parent:
-            strong = parent.find("strong")
-            if strong:
-                heatwave_date = strong.text.strip()
-
-    # --- Build dictionary for output ---
+    # --- Build output dictionary ---
     return {
         "heat_status": combined_summary,
-        "heat_date": heatwave_date,
+        "heat_date": forecast_date or datetime.now().strftime("%B %d, %Y"),
         "heat_period": forecast_period or "Not available"
     }
 
 
 def main():
     """Controls and coordinates updates to the TOTAL heatwave status."""
-    
     CONFIG = {
         "ROOT_DIR": Path(__file__).resolve().parents[1],
         "WORK_DIR_NAME": "work",
@@ -128,7 +127,10 @@ def main():
     with requests.Session() as session:
         new_data = get_latest_heatwave_data(session, CONFIG["SCRAPE_URL"])
 
-    new_date_obj = parse(new_data["heat_date"]) if new_data.get("heat_date") != "Unknown" else datetime.now()
+    try:
+        new_date_obj = parse(new_data["heat_date"])
+    except Exception:
+        new_date_obj = datetime.now()
 
     local_data_path = JSON_DIR / CONFIG["OUT_FILE_NAME"]
     local_date_obj = datetime(1990, 1, 1)
@@ -140,16 +142,17 @@ def main():
     except FileNotFoundError:
         print(f"Local file {local_data_path} not found. A new file will be created.")
     except (json.JSONDecodeError, KeyError) as e:
-        print(f"Error reading or parsing local JSON file: {e}", file=sys.stderr)
+        print(f"Error reading local JSON file: {e}", file=sys.stderr)
 
     print(f"Local data date: {local_date_obj.strftime('%Y-%m-%d')}")
     print(f"Website data date: {new_date_obj.strftime('%Y-%m-%d')}")
 
     if local_date_obj.date() == new_date_obj.date() and not args.overwrite:
-        print("Heatwave info is up to date. No action needed.")
+        print("Heatwave info is already up to date.")
     else:
         print("New heatwave data available. Updating files...")
-        local_data_path.parent.mkdir(parents=True, exist_ok=True)
+        JSON_DIR.mkdir(parents=True, exist_ok=True)
+
         with open(local_data_path, "w") as outfile:
             json.dump(new_data, outfile, indent=4)
         print(f"Saved new data to {local_data_path}")
