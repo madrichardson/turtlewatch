@@ -114,10 +114,6 @@ ul.task-list li input[type="checkbox"] {
     <a class="nav-link" href="./data_dashboard.html"> 
 <span class="menu-text">Data Dashboard</span></a>
   </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./data_dashboard2.html"> 
-<span class="menu-text">Data Dashboard2</span></a>
-  </li>  
 </ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
@@ -154,12 +150,14 @@ ul.task-list li input[type="checkbox"] {
 
 <div class="status-card">
 <div class="status-banner success">
-<span class="status-text">No closure in effect</span>
-<div class="status-date">
+<span id="closure-status" class="status-text">Loading closure status…</span>
+<div id="closure-date" class="status-date">
 
 </div>
 </div>
-<p>NMFS has reopened the Pacific Loggerhead Conservation Area (LCA) to fishing with drift gillnets (DGN). The LCA had been closed to DGN since June 1, 2024. <em>(Posted 8/1/2024)</em></p>
+<p id="closure-description">
+Loading closure details…
+</p>
 <p><small> <em><a href="https://www.westcoast.fisheries.noaa.gov/">Closure status provided by NOAA Fisheries West Coast Regional Office</a></em> </small></p>
 </div>
 <section id="environmental-conditions" class="level3 status-card">
@@ -217,7 +215,7 @@ Dataset: <a href="https://coastwatch.pfeg.noaa.gov/erddap/search/index.html?page
 <p>This year’s <strong>Temperature Observations To Avoid Loggerhead (TOTAL)</strong> values for the Loggerhead Conservation Area. An alert is indicated when indicator values (the timeseries) exceed a threshold of <strong>0.77 (red horizontal line)</strong>.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="https://coastwatch.pfeg.noaa.gov/elnino/dash/indicator_latest.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+<p><img src="data/images/indicator_latest.png" id="indicator-plot" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
 </figure>
 </div>
 </section>
@@ -251,6 +249,90 @@ Dataset: <a href="https://coastwatch.pfeg.noaa.gov/erddap/search/index.html?page
 </div>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+
+  // === Load Closure Status from ltca_closure.csv ===
+  fetch("data/resources/ltca_closure.csv")  
+    .then(response => response.text())
+    .then(text => {
+      const rows = text.trim().split("\n").map(r => r.split(","));
+      const headers = rows.shift().map(h => h.trim());
+      const startIdx = headers.findIndex(h => /start/i.test(h));
+      const endIdx = headers.findIndex(h => /end/i.test(h));
+
+      if (startIdx === -1 || endIdx === -1) {
+        console.error("Start or End column not found in closure CSV");
+        return;
+      }
+
+      // Parse rows into date objects
+      const parsed = rows
+        .map(r => ({
+          start: new Date(r[startIdx]),
+          end: new Date(r[endIdx]),
+        }))
+        .filter(d => !isNaN(d.start) && !isNaN(d.end))
+        .sort((a, b) => b.end - a.end); // keep most recent END date
+
+      const recent = parsed[0];
+      if (!recent) {
+        console.warn("No valid closure records found.");
+        return;
+      }
+
+      console.log("Latest closure record:", recent.start, "→", recent.end);
+
+      const now = new Date();
+      const banner = document.querySelector(".status-banner");
+      const textEl = document.querySelector(".status-text");
+      const dateEl = document.querySelector(".status-date");
+      const descEl = document.getElementById("closure-description");
+
+      // Default state
+      banner.classList.remove("alert-active", "alert-upcoming");
+      banner.classList.add("success");
+      textEl.textContent = "No closure in effect";
+
+      // Determine closure state
+      if (now < recent.start) {
+        banner.classList.remove("success");
+        banner.classList.add("alert-upcoming");
+        textEl.textContent = "Closure Alert: Will take effect soon";
+      } else if (now >= recent.start && now <= recent.end) {
+        banner.classList.remove("success");
+        banner.classList.add("alert-active");
+        textEl.textContent = "Closure is in effect";
+      }
+
+      // Update date
+      if (dateEl) {
+        const opts = { year: "numeric", month: "long", day: "numeric" };
+        dateEl.textContent = "Updated " + now.toLocaleDateString(undefined, opts);
+      }
+
+      // Descriptive paragraph
+      if (descEl) {
+        const startStr = recent.start.toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        });
+        const endStr = recent.end.toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        });
+        const postStr = recent.end.toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "numeric" });
+
+        if (now < recent.start) {
+          descEl.textContent = `NMFS will prohibit fishing with drift gillnets (DGN) in the Pacific Loggerhead Conservation Area from ${startStr} to ${endStr}. *(Posted ${postStr})*`;
+        } else if (now >= recent.start && now <= recent.end) {
+          descEl.textContent = `NMFS is prohibiting fishing with drift gillnets (DGN) in the Pacific Loggerhead Conservation Area. The closure began on ${startStr} and remains in effect until ${endStr}. *(Posted ${postStr})*`;
+        } else {
+          descEl.textContent = `NMFS has reopened the Pacific Loggerhead Conservation Area (LCA) to fishing with drift gillnets (DGN). The LCA had been closed from ${startStr} to ${endStr}. *(Posted ${postStr})*`;
+        }
+      }
+    })
+    .catch(err => console.error("Error loading closure CSV:", err));
 
   // === Load El Niño JSON ===
   fetch("data/json/elnino_last.json")
