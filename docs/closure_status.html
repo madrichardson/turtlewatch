@@ -247,75 +247,90 @@ Dataset: <a href="https://coastwatch.pfeg.noaa.gov/erddap/search/index.html?page
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-  // === Load Closure Status from Itca_closure.csv ===
-  fetch("data/resources/ltca_closure.csv")
-    .then(response => response.text())
-    .then(text => {
-      const rows = text.trim().split("\n").map(r => r.split(","));
-      const headers = rows.shift().map(h => h.trim());
-      const startIdx = headers.findIndex(h => /start/i.test(h));
-      const endIdx = headers.findIndex(h => /end/i.test(h));
+  
+// === Load Closure Status from Itca_closure.csv ===
+fetch("data/resources/ltca_closure.csv")
+  .then(response => response.text())
+  .then(text => {
+    const rows = text.trim().split("\n").map(r => r.split(","));
+    const headers = rows.shift().map(h => h.trim());
+    const startIdx = headers.findIndex(h => /start/i.test(h));
+    const endIdx = headers.findIndex(h => /end/i.test(h));
 
-      if (startIdx === -1 || endIdx === -1) {
-        console.error("Start or End column not found in closure CSV");
-        return;
-      }
+    if (startIdx === -1 || endIdx === -1) {
+      console.error("Start or End column not found in closure CSV");
+      return;
+    }
 
-      // Parse rows into date objects and sort by most recent start date
-      const parsed = rows
-        .map(r => ({
-          start: new Date(r[startIdx]),
-          end: new Date(r[endIdx]),
-        }))
-        .filter(d => !isNaN(d.start) && !isNaN(d.end))
-        .sort((a, b) => b.start - a.start);
+    // Parse rows into date objects
+    const parsed = rows
+      .map(r => ({
+        start: new Date(r[startIdx]),
+        end: new Date(r[endIdx]),
+      }))
+      .filter(d => !isNaN(d.start) && !isNaN(d.end))
+      .sort((a, b) => b.end - a.end); // Sort by most recent END date
 
-      const recent = parsed[0];
-      if (!recent) {
-        console.warn("No valid closure records found.");
-        return;
-      }
+    const recent = parsed[0];
+    if (!recent) {
+      console.warn("No valid closure records found.");
+      return;
+    }
 
-      const now = new Date();
-      const banner = document.querySelector(".status-banner");
-      const textEl = document.querySelector(".status-text");
-      const dateEl = document.querySelector(".status-date");
-      const descEl = document.getElementById("closure-description");
+    console.log("Latest closure record:", recent.start, "→", recent.end);
 
-      // Default state
-      banner.classList.remove("alert-active", "alert-upcoming");
-      banner.classList.add("success");
-      textEl.textContent = "No closure in effect";
+    const now = new Date();
+    const banner = document.querySelector(".status-banner");
+    const textEl = document.querySelector(".status-text");
+    const dateEl = document.querySelector(".status-date");
+    const descEl = document.getElementById("closure-description");
 
-      // Determine closure state
+    // Default state
+    banner.classList.remove("alert-active", "alert-upcoming");
+    banner.classList.add("success");
+    textEl.textContent = "No closure in effect";
+
+    // Determine closure state
+    if (now < recent.start) {
+      banner.classList.remove("success");
+      banner.classList.add("alert-upcoming");
+      textEl.textContent = "Closure Alert: Will take effect soon";
+    } else if (now >= recent.start && now <= recent.end) {
+      banner.classList.remove("success");
+      banner.classList.add("alert-active");
+      textEl.textContent = "Closure is in effect";
+    }
+
+    // Update date
+    if (dateEl) {
+      const opts = { year: "numeric", month: "long", day: "numeric" };
+      dateEl.textContent = "Updated " + now.toLocaleDateString(undefined, opts);
+    }
+
+    // Descriptive paragraph
+    if (descEl) {
+      const startStr = recent.start.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+      const endStr = recent.end.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+
       if (now < recent.start) {
-        banner.classList.remove("success");
-        banner.classList.add("alert-upcoming");
-        textEl.textContent = "Closure Alert: Will take effect soon";
+        descEl.textContent = `NMFS will prohibit fishing with drift gillnets (DGN) in the Pacific Loggerhead Conservation Area from ${startStr} to ${endStr}.`;
       } else if (now >= recent.start && now <= recent.end) {
-        banner.classList.remove("success");
-        banner.classList.add("alert-active");
-        textEl.textContent = "Closure is in effect";
+        descEl.textContent = `NMFS is prohibiting fishing with drift gillnets (DGN) in the Pacific Loggerhead Conservation Area. The closure began on ${startStr} and remains in effect until ${endStr}.`;
+      } else {
+        descEl.textContent = `NMFS has reopened the Pacific Loggerhead Conservation Area (LCA) to fishing with drift gillnets (DGN). The LCA had been closed from ${startStr} to ${endStr}.`;
       }
+    }
+  })
+  .catch(err => console.error("Error loading closure CSV:", err));
 
-      // Update date
-      if (dateEl) {
-        const opts = { year: "numeric", month: "long", day: "numeric" };
-        dateEl.textContent = "Updated " + now.toLocaleDateString(undefined, opts);
-      }
-
-      // Add descriptive paragraph
-      if (descEl) {
-        if (now < recent.start) {
-          descEl.textContent = `NMFS will prohibit fishing with drift gillnets (DGN) in the Pacific Loggerhead Conservation Area from ${recent.start.toLocaleDateString()} to ${recent.end.toLocaleDateString()}.`;
-        } else if (now >= recent.start && now <= recent.end) {
-          descEl.textContent = `NMFS is prohibiting fishing with drift gillnets (DGN) in the Pacific Loggerhead Conservation Area. The closure began on ${recent.start.toLocaleDateString()} and remains in effect until ${recent.end.toLocaleDateString()}.`;
-        } else {
-          descEl.textContent = `NMFS has reopened the Pacific Loggerhead Conservation Area (LCA) to fishing with drift gillnets (DGN). The LCA had been closed from ${recent.start.toLocaleDateString()} to ${recent.end.toLocaleDateString()}.`;
-        }
-      }
-    })
-    .catch(err => console.error("Error loading closure CSV:", err));
 
   
   // === Load El Niño JSON ===
