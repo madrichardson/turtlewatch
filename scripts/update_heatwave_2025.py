@@ -93,7 +93,7 @@ def main():
         'JSON_DIR_NAME': 'json',
         'OUT_FILE_NAME': 'heatwave.json',
         'DATED_OUT_FILE_TEMPLATE': '{}_heatwave.json',
-        'SCRAPE_URL': 'https://psl.noaa.gov/marine-heatwaves/'
+        'SCRAPE_URL': 'https://psl.noaa.gov/marine-heatwaves/#report'
     }
 
     ROOT_DIR = CONFIG['ROOT_DIR']
