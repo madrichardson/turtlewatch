@@ -63,10 +63,13 @@ def _text(elem) -> str:
     return elem.get_text(" ", strip=True) if elem else ""
 
 
+# Only treat these as region headers (stop markers)
+REGION_LABELS_REGEX = r'(Tropical\s+Pacific|North\s+Pacific)'
+
 def grab_region_paragraph(soup: BeautifulSoup, label_regex: str) -> str:
     """
-    Find a <strong> whose text matches label_regex (e.g., '^Tropical\\s+Pacific'),
-    then return the full paragraph text containing it. Returns '' if not found.
+    Find a <strong> whose text matches label_regex and return the FULL paragraph text
+    containing it (raw block that may include *multiple* regions).
     """
     strong = soup.find('strong', string=re.compile(label_regex, re.I))
     if not strong:
@@ -76,35 +79,53 @@ def grab_region_paragraph(soup: BeautifulSoup, label_regex: str) -> str:
         return p.get_text(" ", strip=True)
     return strong.parent.get_text(" ", strip=True) if strong.parent else ""
 
+def slice_region_block(raw_text: str, region_label: str) -> str:
+    """
+    From a raw paragraph that may include multiple regions, return only the text
+    belonging to `region_label`:
+      - start at 'region_label' followed by -, –, or :
+      - stop just before the NEXT *Tropical Pacific* or *North Pacific* label
+      - strip the leading label/punctuation
+    """
+    if not raw_text:
+        return ""
+    text = " ".join(raw_text.split())
+
+    start = re.search(rf'\b{re.escape(region_label)}\b\s*[-–:]\s*', text, re.I)
+    if not start:
+        return ""
+
+    sub = text[start.end():]  # after "Region - "
+
+    # STOP only at the other allowed region labels
+    next_region = re.search(rf'\b{REGION_LABELS_REGEX}\b\s*[--:]\s*', sub, re.I)
+    if next_region:
+        sub = sub[:next_region.start()]
+
+    return sub.strip()
 
 
 def get_latest_heatwave_data(session: requests.Session, url: str) -> Dict[str, Any]:
-    """Scrapes heatwave narrative and dates from the website and returns both regions."""
+    """Scrapes heatwave date/period and extracts ONLY the North/Tropical Pacific region text."""
     html = session.get(url, timeout=30)
     html.raise_for_status()
     soup = BeautifulSoup(html.text, 'html.parser')
 
-    # Date / Period
-    heatwave_date_el = soup.select_one('h5:-soup-contains("Forecast initial time") strong')
-    heatwave_period_el = soup.select_one('h5:-soup-contains("Forecast period") strong')
-    heatwave_date = heatwave_date_el.get_text(strip=True) if heatwave_date_el else ""
-    heatwave_period = heatwave_period_el.get_text(strip=True) if heatwave_period_el else ""
+    # Date / Period (unchanged)
+    d_el = soup.select_one('h5:-soup-contains("Forecast initial time") strong')
+    p_el = soup.select_one('h5:-soup-contains("Forecast period") strong')
+    heatwave_date = d_el.get_text(strip=True) if d_el else ""
+    heatwave_period = p_el.get_text(strip=True) if p_el else ""
 
-    # Regions (explicit fields)
-    tropical_pacific = grab_region_paragraph(soup, r'^Tropical\s+Pacific')
-    north_pacific    = grab_region_paragraph(soup, r'^North\s+Pacific')
+    # Raw text blocks containing each label
+    raw_tp = grab_region_paragraph(soup, r'^Tropical\s+Pacific')
+    raw_np = grab_region_paragraph(soup, r'^North\s+Pacific')
 
-    # Fallback: if neither found, try any paragraph mentioning "Pacific"
-    if not tropical_pacific and not north_pacific:
-        any_p = soup.find('p', string=re.compile(r'Pacific', re.I))
-        if any_p:
-            txt = any_p.get_text(" ", strip=True)
-            if re.search(r'\bTropical\s+Pacific\b', txt, re.I):
-                tropical_pacific = txt
-            if re.search(r'\bNorth\s+Pacific\b', txt, re.I):
-                north_pacific = txt
+    # Slice only the desired regions (no sentence limits)
+    tropical_pacific = slice_region_block(raw_tp, "Tropical Pacific") or slice_region_block(raw_np, "Tropical Pacific")
+    north_pacific = slice_region_block(raw_np, "North Pacific") or slice_region_block(raw_tp, "North Pacific")
 
-    # Backward-compat combined status
+    # Combined (only these two)
     parts = []
     if north_pacific:
         parts.append(f"North Pacific - {north_pacific}")
@@ -117,7 +138,8 @@ def get_latest_heatwave_data(session: requests.Session, url: str) -> Dict[str, A
         "heat_date": heatwave_date,
         "heat_period": heatwave_period,
         "north_pacific": north_pacific,
-        "tropical_pacific": tropical_pacific
+        "tropical_pacific": tropical_pacific,
+        "source_url": url
     }
 
 
