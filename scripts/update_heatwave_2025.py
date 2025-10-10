@@ -20,23 +20,12 @@ from typing import Dict, Any
 
 
 def send_to_erddap(work_dir: Path, infile: Path, erddap_path: str, ofile: str) -> bool:
-    """Sends files from the production server to an ERDDAP server via SCP.
-
-    Args:
-        work_dir (Path): The local directory of the file.
-        infile (Path): The name of the local file.
-        erddap_path (str): The remote directory path on the ERDDAP server.
-        ofile (str): The name of the remote file.
-
-    Returns:
-        bool: True if the file transfer was successful, False otherwise.
-    """
+    """Sends files from the production server to an ERDDAP server via SCP."""
     cmd = [
         'scp',
         str(work_dir / infile),
         f'cwatch@192.168.31.15:{os.path.join(erddap_path, ofile)}'
     ]
-    
     print(f"Executing: {' '.join(cmd)}")
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
@@ -51,48 +40,52 @@ def send_to_erddap(work_dir: Path, infile: Path, erddap_path: str, ofile: str) -
 
 
 def get_latest_heatwave_data(session: requests.Session, url: str) -> Dict[str, Any]:
-    """Scrapes heatwave narrative and dates from the website.
+    """Scrapes both Tropical and North Pacific marine heatwave summaries from NOAA PSL."""
 
-    Args:
-        session (requests.Session): The requests session object to use for the HTTP request.
-        url (str): The URL of the website to scrape.
-
-    Returns:
-        Dict[str, Any]: A dictionary containing the heatwave status, date, and forecast period.
-
-    Raises:
-        requests.exceptions.RequestException: If the HTTP request fails.
-        AttributeError: If key HTML elements are not found on the page.
-    """
     html = session.get(url)
     html.raise_for_status()
     soup = BeautifulSoup(html.text, 'html.parser')
-    
-    # Use more specific selectors or compile patterns
-    pattern = re.compile(r'North Pacific|Pacific')
-    
-    try:
-        heatwave_text = soup.find('strong', string=pattern).parent.text.strip()
-        
-        # Using more robust CSS selectors to find the date and period
-        heatwave_date = soup.select_one('h5:-soup-contains("Forecast initial time") strong').text.strip()
-        heatwave_period = soup.select_one('h5:-soup-contains("Forecast period") strong').text.strip()
 
-    except AttributeError:
-        print("Required HTML elements not found on the page.", file=sys.stderr)
-        sys.exit(1)
+    # --- Find Forecast Period and Initial Time ---
+    heatwave_period = None
+    heatwave_date = None
+    for h5 in soup.find_all("h5"):
+        text = h5.get_text(strip=True)
+        if "Forecast initial time" in text:
+            strong = h5.find("strong")
+            if strong:
+                heatwave_date = strong.get_text(strip=True)
+        if "Forecast period" in text:
+            strong = h5.find("strong")
+            if strong:
+                heatwave_period = strong.get_text(strip=True)
 
+    # --- Collect both Tropical Pacific and North Pacific summaries ---
+    summaries = []
+    for h3 in soup.find_all("h3"):
+        title = h3.get_text(strip=True)
+        if "Pacific" in title:  # captures both Tropical & North Pacific
+            para = h3.find_next("p")
+            if para:
+                summaries.append(f"{title}: {para.get_text(strip=True)}")
+
+    if not summaries:
+        print("No Pacific summaries found on PSL page.", file=sys.stderr)
+        summaries_text = "No current marine heatwave summaries found."
+    else:
+        summaries_text = "\n\n".join(summaries)
+
+    # --- Return combined result ---
     return {
-        'heat_status': heatwave_text,
-        'heat_date': heatwave_date,
-        'heat_period': heatwave_period
+        "heat_status": summaries_text,
+        "heat_date": heatwave_date or datetime.now().strftime("%B %d, %Y"),
+        "heat_period": heatwave_period or "Not available"
     }
 
 
 def main():
     """Controls and coordinates updates to the TOTAL heatwave status."""
-    
-    # Configuration
+
     CONFIG = {
         'ROOT_DIR': Path(__file__).resolve().parents[1],
         'WORK_DIR_NAME': 'work',
@@ -107,19 +100,16 @@ def main():
     WORK_DIR = ROOT_DIR / CONFIG['WORK_DIR_NAME']
     JSON_DIR = ROOT_DIR / CONFIG['DATA_DIR_NAME'] / CONFIG['JSON_DIR_NAME']
 
-    # Argument parsing
     parser = argparse.ArgumentParser(description='Update TOTAL heatwave status. Use -o to force overwrite.')
     parser.add_argument('-o', '--overwrite', action='store_true', help='Force update and overwrite existing data.')
     args = parser.parse_args()
 
-    # Get new data from website
     print(f"Scraping heatwave data from {CONFIG['SCRAPE_URL']}")
     with requests.Session() as session:
         new_data = get_latest_heatwave_data(session, CONFIG['SCRAPE_URL'])
-    
+
     new_date_obj = parse(new_data['heat_date'])
 
-    # Get local data date
     local_data_path = JSON_DIR / CONFIG['OUT_FILE_NAME']
     local_date_obj = datetime(1990, 1, 1)
 
@@ -132,7 +122,6 @@ def main():
     except (json.JSONDecodeError, KeyError) as e:
         print(f"Error reading or parsing local JSON file: {e}", file=sys.stderr)
 
-    # Compare and update
     print(f"Local data date: {local_date_obj.strftime('%Y-%m-%d')}")
     print(f"Website data date: {new_date_obj.strftime('%Y-%m-%d')}")
 
@@ -140,17 +129,10 @@ def main():
         print("Heatwave info is up to date. No action needed.")
     else:
         print("New heatwave data available. Updating files...")
-        
-        # Save the new data to the main JSON file
         with open(local_data_path, "w") as outfile:
             json.dump(new_data, outfile, indent=4)
         print(f"Saved new data to {local_data_path}")
 
-        # Send to ERDDAP
-        remote_path = Path(CONFIG['ERDDAP_PATH'])
-        ## send_to_erddap(JSON_DIR, local_data_path.name, remote_path.as_posix(), local_data_path.name)
-
-        # Save a dated copy
         dated_ofile = CONFIG['DATED_OUT_FILE_TEMPLATE'].format(new_date_obj.strftime('%Y%m'))
         dated_path = JSON_DIR / dated_ofile
         with open(dated_path, "w") as outfile:
