@@ -31,19 +31,79 @@ jobs:
         uses: quarto-dev/quarto-actions/setup@v2
    
       - name: Run TOTAL update controller
-        run: python scripts/control_total_data_2025.py
+        run: |
+          set -e
+          for i in 1 2 3; do
+            echo "Attempt $i..."
+            if python scripts/control_total_data_2025.py; then
+              echo "Success on attempt $i"
+              exit 0
+            fi
+            echo "Attempt $i failed"
+            sleep 60  # wait 1 minute before retry
+          done
+          echo "All attempts failed"
+          exit 1
 
       - name: Scrape ENSO status
-        run: python scripts/scape_elnino_2025.py
+        run: |
+          set -e
+          for i in 1 2 3: do
+            echo "Attempt $i..."
+            if python scripts/scape_elnino_2025.py; then
+              echo "Success on attempt $i"
+              exit 0
+            fi
+            echo "Attempt $i failed"
+            sleep 60  # wait 1 minute before retry
+          done
+	  echo "All attempts failed"
+          exit 1
 
       - name: Scrape Heatwave status
-        run: python scripts/update_heatwave_2025.py
+        run: |
+          set -e
+          for i in 1 2 3; do
+            echo "Attempt $i..."
+            if python scripts/update_heatwave_2025.py; then
+              echo "Success on attempt $i"
+              exit 0
+            fi
+            echo "Attempt $i failed"
+            sleep 60 # wait 1 minute before retry
+          done
+          echo "All attempts failed"
+          exit 1
 
       - name: Scrape Plot Indicator Data
-        run: python scripts/plot_total_tool_2025.py
+        run: |
+	  set -e
+          for i in 1 2 3; do
+            echo "Attempt $i..."
+            if python scripts/plot_total_tool_2025.py; then
+              echo "Success on attempt $i"
+              exit 0
+            fi
+            echo "Attempt $i failed"
+            sleep 60 # wait 1 minute before retry
+          done
+          echo "All attempts failed"
+          exit 1
 
       - name: Update closure history from Federal Register
-        run: python scripts/update_Itca_closure.py
+        run: |
+	  set -e
+	  for i in 1 2 3; do
+            echo "Attempt $i..."
+       	    if python scripts/update_Itca_closure.py; then
+	      echo "Success on attempt $i"
+              exit 0
+            fi
+            echo "Attempt $i failed"
+            sleep 60 # wait 1 minute before retry
+          done
+          echo "All attempts failed"
+          exit 1
 
       - name: Commit updated data & images
         run: |
