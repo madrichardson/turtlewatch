@@ -153,7 +153,7 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 <p id="closure-description">
-Loading closure details…
+NMFS has reopened the Pacific Loggerhead Conservation Area (LCA) to fishing with drift gillnets (DGN). The LCA had been close to DGN since June 1, 2024. (Posted 8/1/2024)
 </p>
 <p><small> <em><a href="https://www.westcoast.fisheries.noaa.gov/">Closure status provided by NOAA Fisheries West Coast Regional Office</a></em> </small></p>
 </div>
@@ -313,6 +313,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // Descriptive paragraph
+      /*
       if (descEl) {
         const startStr = recent.start.toLocaleDateString("en-US", {
           month: "long",
@@ -334,6 +335,7 @@ document.addEventListener("DOMContentLoaded", () => {
           descEl.textContent = `NMFS has reopened the Pacific Loggerhead Conservation Area (LCA) to fishing with drift gillnets (DGN). The LCA had been closed from ${startStr} to ${endStr}. *(Posted ${postStr})*`;
         }
       }
+      */
     })
     .catch(err => console.error("Error loading closure CSV:", err));
 
