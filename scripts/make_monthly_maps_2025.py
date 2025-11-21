@@ -120,7 +120,7 @@ def open_xr_dataset_with_retry(
                 f"Opening xarray dataset (attempt {attempt}/{retries}): {url}",
                 file=sys.stderr,
             )
-            return xr.open_dataset(url)
+            return xr.open_dataset(url, engine="netcdf4")
         except OSError as e:
             # Common for network / remote I/O problems
             if attempt == retries:
