@@ -14,6 +14,7 @@ import subprocess
 from pathlib import Path
 from typing import List, Tuple, Dict, Any, Union
 import warnings
+import time
 warnings.filterwarnings('ignore')
 
 __author__ = "Dale Robinson"
@@ -54,14 +55,105 @@ def get_closest_value_indices(arr: np.ndarray, val_range: List[float]) -> Tuple[
     return min_idx, max_idx
 
 
-def get_data_from_erddap(dataset_name: str) -> netCDF4.Dataset:
-    """Opens and returns a NetCDF dataset from ERDDAP."""
+def get_data_from_erddap(
+    dataset_name: str,
+    retries: int = 5,
+    backoff_seconds: int = 20
+) -> netCDF4.Dataset:
+    """
+    Open a remote ERDDAP dataset via OPeNDAP with automatic retry/backoff logic.
+
+    This function attempts to open a remote NetCDF dataset hosted on an ERDDAP
+    server using `netCDF4.Dataset(url, "r")`. Because OPeNDAP endpoints can
+    occasionally become temporarily unavailable — due to network instability,
+    server load, brief outages, or routing issues — a single attempt may fail
+    even when the dataset becomes accessible moments later.
+
+    To make the TOTAL update pipeline more resilient, this function wraps the
+    dataset-opening call in retry logic:
+    
+    - It attempts to open the dataset up to `retries` times.
+    - Failures caused by network/IO-related issues (raised as `OSError` or
+      `IOError` by the netCDF4 library) trigger a retry.
+    - Between each retry, the function sleeps for a linearly increasing delay:
+      `backoff_seconds * attempt_number`.  
+      For example, with `backoff_seconds=20`:
+        • attempt 1 → wait 20s  
+        • attempt 2 → wait 40s  
+        • attempt 3 → wait 60s  
+      This avoids overloading the server and provides time for transient issues
+      to resolve.
+    - Non-IO errors (unexpected exceptions from netCDF4 or Python) are treated as
+      fatal and cause an immediate exit.
+
+    If the final attempt still fails, the function prints an error message to
+    STDERR and terminates the script using `sys.exit(1)`, ensuring the calling
+    workflow clearly reports a failure rather than silently producing partial or
+    inconsistent results.
+
+    Parameters
+    ----------
+    dataset_name : str
+        The ERDDAP dataset ID (e.g., "jplMURSST41anommday").
+        This ID is inserted into the base URL template defined in CONFIG
+        to produce a full OPeNDAP-accessible URL.
+    
+    retries : int, optional
+        The maximum number of attempts to open the dataset.
+        Defaults to 5. A value of 1 means “try once with no retry”.
+
+    backoff_seconds : int, optional
+        The base number of seconds to wait between retry attempts.
+        The actual delay increases linearly with each attempt:
+            delay = backoff_seconds * attempt_number
+        Defaults to 20 seconds.
+
+    Returns
+    -------
+    netCDF4.Dataset
+        An open Dataset object pointing to the remote ERDDAP dataset.
+        The caller is responsible for closing it (typically via `with`).
+
+    Exits
+    -----
+    sys.exit(1)
+        If all retry attempts fail due to OSError/IOError, or if an unexpected,
+        non-retriable exception occurs. The exit ensures that downstream
+        scripts do not run on missing or incomplete data.
+    """
     url = CONFIG['URL_BASE'].format(dataset_name)
-    try:
-        return netCDF4.Dataset(url, 'r')
-    except Exception as e:
-        print(f"Error opening ERDDAP dataset at {url}: {e}", file=sys.stderr)
-        sys.exit(1)
+    last_exc = None
+
+    for attempt in range(1, retries + 1):
+        try:
+            print(
+                f"Opening ERDDAP dataset (attempt {attempt}/{retries}): {url}",
+                file=sys.stderr
+            )
+            return netCDF4.Dataset(url, "r")
+        except OSError as e:
+            # netCDF4 uses OSError/IOError for many I/O and network issues
+            last_exc = e
+            if attempt == retries:
+                print(
+                    f"Error opening ERDDAP dataset at {url} after {retries} attempts: {e}",
+                    file=sys.stderr
+                )
+                sys.exit(1)
+
+            sleep_for = backoff_seconds * attempt  # linear backoff
+            print(
+                f"Failed to open dataset ({e}); sleeping {sleep_for} seconds before retry...",
+                file=sys.stderr
+            )
+            time.sleep(sleep_for)
+        except Exception as e:
+            # Non-I/O failures: treat as fatal immediately
+            print(
+                f"Non-retriable error opening ERDDAP dataset at {url}: {e}",
+                file=sys.stderr
+            )
+            sys.exit(1)
 
 
 def get_missing_dates(df: pd.DataFrame, erddap_dates_str: List[datetime]) -> List[datetime]:

@@ -20,31 +20,124 @@ import requests
 import sys
 import io
 import json
+import time
+from typing import Iterable, Optional
+
+
+def fetch_with_retry(
+    session: requests.Session,
+    url: str,
+    retries: int = 5,
+    timeout: int = 30,
+    backoff_seconds: int = 10,
+    retriable_statuses: Optional[Iterable[int]] = None,
+) -> requests.Response:
+    """Fetch a URL with simple retry/backoff logic.
+
+    Parameters
+    ----------
+    session : requests.Session
+        Active session object.
+    url : str
+        URL to fetch.
+    retries : int, optional
+        Number of attempts (including the first), by default 5.
+    timeout : int, optional
+        Per-request timeout in seconds, by default 30.
+    backoff_seconds : int, optional
+        Base backoff in seconds; actual sleep is backoff_seconds * attempt_index.
+    retriable_statuses : Iterable[int], optional
+        HTTP status codes that should be treated as transient and retried.
+
+    Returns
+    -------
+    requests.Response
+        Successful Response object.
+
+    Raises
+    ------
+    requests.exceptions.RequestException
+        If all retry attempts fail.
+    """
+    if retriable_statuses is None:
+        # Include 403 here because you've seen it behave like a transient error.
+        retriable_statuses = (429, 500, 502, 503, 504, 403)
+
+    retriable_statuses = set(retriable_statuses)
+
+    for attempt in range(1, retries + 1):
+        try:
+            resp = session.get(url, timeout=timeout)
+            # Explicitly retry if status is in our transient list
+            if resp.status_code in retriable_statuses:
+                raise requests.HTTPError(
+                    f"HTTP {resp.status_code} from {url}",
+                    response=resp
+                )
+            resp.raise_for_status()
+            return resp
+
+        except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as e:
+            is_last = attempt == retries
+            print(
+                f"[fetch_with_retry] Attempt {attempt}/{retries} failed for {url}: {e}",
+                file=sys.stderr
+            )
+
+            if is_last:
+                print(
+                    f"[fetch_with_retry] Giving up after {retries} attempts.",
+                    file=sys.stderr
+                )
+                raise
+
+            sleep_for = backoff_seconds * attempt  # simple linear backoff
+            print(
+                f"[fetch_with_retry] Sleeping {sleep_for} seconds before retry...",
+                file=sys.stderr
+            )
+            time.sleep(sleep_for)
 
 # Define a function to get the latest available date from ERDDAP
 def get_latest_erddap_date(session: requests.Session) -> datetime:
     """Fetches the most recent data date from the ERDDAP server.
 
-    Args:
-        session (requests.Session): The requests session object to use for the HTTP request.
+    Args
+    ----
+    session : requests.Session
+        The requests session object to use for the HTTP request.
 
-    Returns:
-        datetime: The datetime object of the most recent available data.
+    Returns
+    -------
+    datetime
+        Datetime object of the most recent available data.
 
-    Raises:
-        requests.exceptions.RequestException: If the HTTP request fails.
-        pd.errors.ParserError: If the CSV data from the server cannot be parsed.
+    Notes
+    -----
+    Exits with status 1 if all retry attempts fail or the CSV cannot be parsed.
     """
+    url = (
+        "https://coastwatch.pfeg.noaa.gov/erddap/griddap/"
+        "jplMURSST41anommday.csv0?time[(last)]"
+    )
+
     try:
-        url_anom = session.get(
-            'https://coastwatch.pfeg.noaa.gov/erddap/griddap/jplMURSST41anommday.csv0?time[(last)]'
+        # Use the retry helper instead of a single .get()
+        resp = fetch_with_retry(
+            session,
+            url,
+            retries=5,
+            timeout=30,
+            backoff_seconds=10,
+            retriable_statuses=(429, 500, 502, 503, 504, 403),
         )
-        url_anom.raise_for_status() # Raises an HTTPError if the response was an HTTP error
-        df = pd.read_csv(io.StringIO(url_anom.text))
+        df = pd.read_csv(io.StringIO(resp.text))
+        # The date is in the first column header
         return parse(df.columns[0])
     except (requests.exceptions.RequestException, pd.errors.ParserError) as e:
-        print(f"Error fetching or parsing ERDDAP data: {e}", file=sys.stderr)
+        print(f"Error fetching or parsing ERDDAP data after retries: {e}", file=sys.stderr)
         sys.exit(1)
+
 
 # Define a function to parse a date from a filename
 def parse_date_from_filename(filename: str) -> datetime:
@@ -212,7 +305,6 @@ def main():
         print(json.dumps(web_data, indent=4))
     except Exception as e:
         print(f"Failed to create web_data.json: {e}")
-
 
 
 if __name__ == "__main__":

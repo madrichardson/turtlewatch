@@ -49,6 +49,7 @@ project_root/
 import csv
 import json
 import requests
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -80,6 +81,51 @@ def load_existing_records():
     with open(CSV_PATH, newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
 
+
+def fetch_with_retry_json(
+    url: str,
+    retries: int = 5,
+    timeout: int = 30,
+    backoff_seconds: int = 20,
+) -> requests.Response:
+    """
+    Fetch a JSON API endpoint with simple retry/backoff logic.
+
+    Retries on connection errors, timeouts, and 5xx HTTP responses,
+    which are usually transient for the Federal Register API.
+    """
+    retriable_statuses = {429, 500, 502, 503, 504}
+
+    for attempt in range(1, retries + 1):
+        try:
+            resp = requests.get(url, timeout=timeout)
+            if resp.status_code in retriable_statuses:
+                raise requests.HTTPError(
+                    f"HTTP {resp.status_code} from {url}",
+                    response=resp
+                )
+            resp.raise_for_status()
+            return resp
+        except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as e:
+            is_last = (attempt == retries)
+            print(
+                f"[fetch_with_retry_json] Attempt {attempt}/{retries} failed for {url}: {e}",
+                file=sys.stderr,
+            )
+            if is_last:
+                print(
+                    f"[fetch_with_retry_json] Giving up after {retries} attempts.",
+                    file=sys.stderr,
+                )
+                raise
+            sleep_for = backoff_seconds * attempt  # 20, 40, 60, ...
+            print(
+                f"[fetch_with_retry_json] Sleeping {sleep_for} seconds before retry...",
+                file=sys.stderr,
+            )
+            time.sleep(sleep_for)
+
+
 def get_new_closures():
     """
     Query the Federal Register API for new closure notices.
@@ -105,8 +151,7 @@ def get_new_closures():
     requests.exceptions.RequestException
         If the API request fails or the response is invalid.
     """
-    resp = requests.get(API_URL)
-    resp.raise_for_status()
+    resp = fetch_with_retry_json(API_URL)
     docs = resp.json().get("results", [])
 
     closures = []

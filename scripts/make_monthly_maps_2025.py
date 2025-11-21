@@ -19,6 +19,7 @@ import sys
 import subprocess
 import warnings
 import shutil
+import time
 from datetime import datetime, timedelta, timezone, date
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import parse
@@ -82,6 +83,64 @@ def send_to_erddap(local_file: Path, remote_path: Path) -> bool:
     except FileNotFoundError:
         print("SCP command not found. Is it installed and in your PATH?", file=sys.stderr)
     return False
+
+
+def open_xr_dataset_with_retry(
+    url: str,
+    retries: int = 5,
+    backoff_seconds: int = 20,
+) -> xr.Dataset:
+    """
+    Open a remote ERDDAP dataset with xarray using simple retry/backoff logic.
+
+    Parameters
+    ----------
+    url : str
+        Full URL to the ERDDAP griddap endpoint (e.g., CONFIG['URL_BASE'].format(...)).
+    retries : int, optional
+        Maximum number of attempts. Defaults to 5.
+    backoff_seconds : int, optional
+        Base delay between attempts. The actual delay is
+        backoff_seconds * attempt_number (20, 40, 60, ... with default).
+    
+    Returns
+    -------
+    xr.Dataset
+        Open xarray Dataset pointing to the remote resource.
+
+    Exits
+    -----
+    sys.exit(1)
+        If all attempts fail, the function prints an error and exits to avoid
+        running the map-generation logic on missing data.
+    """
+    for attempt in range(1, retries + 1):
+        try:
+            print(
+                f"Opening xarray dataset (attempt {attempt}/{retries}): {url}",
+                file=sys.stderr,
+            )
+            return xr.open_dataset(url)
+        except OSError as e:
+            # Common for network / remote I/O problems
+            if attempt == retries:
+                print(
+                    f"Error opening xarray dataset at {url} after {retries} attempts: {e}",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            sleep_for = backoff_seconds * attempt
+            print(
+                f"Failed to open dataset ({e}); sleeping {sleep_for} seconds before retry...",
+                file=sys.stderr,
+            )
+            time.sleep(sleep_for)
+        except Exception as e:
+            print(
+                f"Non-retriable error opening xarray dataset at {url}: {e}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
 
 
 def plot_map(data_da: xr.DataArray, plot_config: Dict, title_date: str, work_dir: Path) -> Path:
@@ -262,13 +321,13 @@ def main():
         }
     ]
 
-    # Make pointers to datasets
-    try:
-        sst_da = xr.open_dataset(CONFIG['URL_BASE'].format(CONFIG['DATASET_NAMES']['sst']))
-        anom_da = xr.open_dataset(CONFIG['URL_BASE'].format(CONFIG['DATASET_NAMES']['anom']))
-    except Exception as e:
-        print(f"Error opening datasets from ERDDAP: {e}", file=sys.stderr)
-        sys.exit(1)
+    # Make pointers to datasets (with retry)
+    sst_url = CONFIG['URL_BASE'].format(CONFIG['DATASET_NAMES']['sst'])
+    anom_url = CONFIG['URL_BASE'].format(CONFIG['DATASET_NAMES']['anom'])
+
+    sst_da = open_xr_dataset_with_retry(sst_url)
+    anom_da = open_xr_dataset_with_retry(anom_url)
+
 
     # Make maps for the last 6 months
     table_dict = {}

@@ -15,6 +15,7 @@ import os
 import shutil
 import json
 import sys
+import time
 from datetime import datetime
 import argparse
 import subprocess
@@ -64,6 +65,51 @@ def send_to_erddap(local_file: Path, remote_path: Path) -> bool:
     return False
 
 
+def fetch_with_retry_html(
+    session: requests.Session,
+    url: str,
+    retries: int = 5,
+    timeout: int = 30,
+    backoff_seconds: int = 20,
+) -> requests.Response:
+    """
+    Fetch a URL with simple retry/backoff logic for HTML pages.
+
+    Retries on connection errors, timeouts, and 5xx HTTP responses,
+    which are typically transient for the CPC website.
+    """
+    retriable_statuses = {429, 500, 502, 503, 504}
+
+    for attempt in range(1, retries + 1):
+        try:
+            resp = session.get(url, timeout=timeout)
+            if resp.status_code in retriable_statuses:
+                raise requests.HTTPError(
+                    f"HTTP {resp.status_code} from {url}",
+                    response=resp
+                )
+            resp.raise_for_status()
+            return resp
+        except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as e:
+            is_last = (attempt == retries)
+            print(
+                f"[fetch_with_retry_html] Attempt {attempt}/{retries} failed for {url}: {e}",
+                file=sys.stderr,
+            )
+            if is_last:
+                print(
+                    f"[fetch_with_retry_html] Giving up after {retries} attempts.",
+                    file=sys.stderr,
+                )
+                raise
+            sleep_for = backoff_seconds * attempt  # 20, 40, 60, ...
+            print(
+                f"[fetch_with_retry_html] Sleeping {sleep_for} seconds before retry...",
+                file=sys.stderr,
+            )
+            time.sleep(sleep_for)
+
+
 def get_latest_enso_data(session: requests.Session, url: str) -> Dict[str, Any]:
     """Scrapes the latest ENSO status and synopsis from the CPC website.
 
@@ -80,14 +126,13 @@ def get_latest_enso_data(session: requests.Session, url: str) -> Dict[str, Any]:
     """
     print(f"Attempting to scrape URL: {url}")
     try:
-        html = session.get(url)
-        html.raise_for_status()
+        resp = fetch_with_retry_html(session, url)
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching URL: {e}", file=sys.stderr)
+        print(f"Error fetching URL after retries: {e}", file=sys.stderr)
         sys.exit(3)
-        
-    soup = BeautifulSoup(html.text, 'html.parser')
-    
+
+    soup = BeautifulSoup(resp.text, 'html.parser')
+
     # Scrape Date
     try:
         ft = soup.find_all('font')
