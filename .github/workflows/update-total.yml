@@ -1,5 +1,4 @@
 name: Update TOTAL Dashboard
-
 on:
   schedule:
     - cron: "0 12 3 * *"   # run on the 1st of each month at 12:00 UTC
@@ -48,7 +47,7 @@ jobs:
       - name: Scrape ENSO status
         run: |
           set -e
-          for i in 1 2 3: do
+          for i in 1 2 3; do
             echo "Attempt $i..."
             if python scripts/scape_elnino_2025.py; then
               echo "Success on attempt $i"
