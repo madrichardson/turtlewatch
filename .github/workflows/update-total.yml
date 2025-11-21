@@ -1,126 +1,67 @@
 name: Update TOTAL Dashboard
 
 on:
-schedule:
- - cron: "0 12 3 * *"    # run on the 3rd of each month at 12:00 UTC
- - cron: "0 12 16 * *"   # run on the 16th of each month at 12:00 UTC
- - cron: "0 12 28 * *"   # run on the 28th of each month at 12:00 UTC
-workflow_dispatch:         # manual trigger option
+  schedule:
+    - cron: "0 12 3 * *"   # run on the 1st of each month at 12:00 UTC
+    - cron: "0 12 16 * *" # run on the 16th of each month at 12:00 UTC
+    - cron: "0 12 28 * *" # run on the 28th of each month at 12:00 UTC
+  workflow_dispatch:         # manual trigger option
 
 permissions:
-contents: write
+  contents: write
 
 jobs:
-update:
- runs-on: ubuntu-latest
+  update:
+    runs-on: ubuntu-latest
 
- steps:
-   - name: Checkout repo
-     uses: actions/checkout@v4
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-   - name: Set up Python
-     uses: actions/setup-python@v5
-     with:
-       python-version: "3.11"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-   - name: Install dependencies
-     run: |
-       pip install pandas numpy netCDF4 requests python-dateutil matplotlib cartopy beautifulsoup4 lxml plotnine xarray
-  
-   - name: Setup Quarto
-     uses: quarto-dev/quarto-actions/setup@v2
+      - name: Install dependencies
+        run: |
+          pip install pandas numpy netCDF4 requests python-dateutil matplotlib cartopy beautifulsoup4 lxml plotnine xarray
+     
+      - name: Setup Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
 
-   - name: Run TOTAL update controller (with retry)
-     run: |
-       set -e
-       for i in 1 2 3; do
-         echo "Attempt $i..."
-         if python scripts/control_total_data_2025.py; then
-           echo "Success on attempt $i"
-           exit 0
-         fi
-         echo "Attempt $i failed"
-         sleep 60  # wait 1 minute before retry
-       done
-       echo "All attempts failed"
-       exit 1
+      - name: Run TOTAL update controller
+        run: python scripts/control_total_data_2025.py
 
-   - name: Scrape ENSO status (with retry)
-     run: |
-       set -e
-       for i in 1 2 3; do
-         echo "Attempt $i..."
-         if python scripts/scape_elnino_2025.py; then
-           echo "Success on attempt $i"
-           exit 0
-         fi
-         echo "Attempt $i failed"
-         sleep 60  # wait 1 minute before retry
-       done
-       echo "All attempts failed"
-       exit 1
+      - name: Scrape ENSO status
+        run: python scripts/scape_elnino_2025.py
 
-   - name: Scrape Heatwave status (with retry)
-     run: |
-       set -e
-       for i in 1 2 3; do
-         echo "Attempt $i..."
-         if python scripts/update_heatwave_2025.py; then
-           echo "Success on attempt $i"
-           exit 0
-         fi
-         echo "Attempt $i failed"
-         sleep 60  # wait 1 minute before retry
-       done
-       echo "All attempts failed"
-       exit 1
+      - name: Scrape Heatwave status
+        run: python scripts/update_heatwave_2025.py
 
-   - name: Scrape Plot Indicator Data (with retry)
-     run: |
-       set -e
-       for i in 1 2 3; do
-         echo "Attempt $i..."
-         if python scripts/plot_total_tool_2025.py; then
-           echo "Success on attempt $i"
-           exit 0
-         fi
-         echo "Attempt $i failed"
-         sleep 60  # wait 1 minute before retry
-       done
-       echo "All attempts failed"
-       exit 1
+      - name: Scrape Plot Indicator Data
+        run: python scripts/plot_total_tool_2025.py -u -p -j
+        run: python scripts/plot_total_tool_2025.py
 
-   - name: Update closure history from Federal Register (with retry)
-     run: |
-       set -e
-       for i in 1 2 3; do
-         echo "Attempt $i..."
-         if python scripts/update_Itca_closure.py; then
-           echo "Success on attempt $i"
-           exit 0
-         fi
-         echo "Attempt $i failed"
-         sleep 60  # wait 1 minute before retry
-       done
-       echo "All attempts failed"
-       exit 1
+      - name: Update closure history from Federal Register
+        run: python scripts/update_Itca_closure.py
 
-   - name: Commit updated data & images
-     run: |
-       git config --global user.name "github-actions[bot]"
-       git config --global user.email "github-actions[bot]@users.noreply.github.com"
-       git add data/json/*.json data/images/*.png data/resources/*.csv
-       git commit -m "Automated TOTAL data update" || echo "No changes to commit"
-       git push
-     env:
-       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Commit updated data & images
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/json/*.json data/images/*.png data/resources/*.csv
+          git commit -m "Automated TOTAL data update" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-   - name: Render Quarto site
-     uses: quarto-dev/quarto-actions/render@v2
-     with:
-       to: html
+      - name: Render Quarto site
+        uses: quarto-dev/quarto-actions/render@v2
+        with:
+          to: html
 
-   - name: Deploy to GitHub Pages
-     uses: quarto-dev/quarto-actions/publish@v2
-     with:
-       target: gh-pages
+      - name: Deploy to GitHub Pages
+        uses: quarto-dev/quarto-actions/publish@v2
+        with:
+          target: gh-pages
