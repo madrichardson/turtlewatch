@@ -469,21 +469,50 @@ document.addEventListener("DOMContentLoaded", () => {
     })
     .catch(err => console.error("Error loading TOTAL index JSON:", err));
 
-  // === SST SLIDER (local data/images/) ===
-  const sstImgEl = document.getElementById("sst-dash-image");
-  const sstPrevBtn = document.querySelector(".sst-slider .prev");
-  const sstNextBtn = document.querySelector(".sst-slider .next");
-  const sstYearTitle = document.getElementById("sst-year");
+  
+  // === SST & ANOMALY SLIDERS (last 6 full months, EXCLUDING current month) ===
+  const sstImgEl      = document.getElementById("sst-dash-image");
+  const sstPrevBtn    = document.querySelector(".sst-slider .prev");
+  const sstNextBtn    = document.querySelector(".sst-slider .next");
+  const sstYearLabels = document.querySelectorAll("#sst-year"); // you have this id twice
 
-  const year = new Date().getFullYear();
-  const months = ["03","04","05","06","07","08"];
-  const sstImages = months.map(m => `data/images/sst_${year}${m}16.png`);
-  let sstIndex = sstImages.length - 1;
+  const anomImgEl   = document.getElementById("anom-image");
+  const anomPrevBtn = document.querySelector(".anom-slider .prev");
+  const anomNextBtn = document.querySelector(".anom-slider .next");
+
+  // Build list of last 6 FULL months *before* the current month, using the 16th of each month
+  const today       = new Date();
+  const numMonths   = 6;
+  const sstImages   = [];
+  const anomImages  = [];
+  const monthLabels = [];  // e.g. ["Jun 2025", "Jul 2025", ...]
+
+  for (let i = numMonths; i >= 1; i--) {
+    const d    = new Date(today.getFullYear(), today.getMonth() - i, 16);
+    const yyyy = d.getFullYear();
+    const mm   = String(d.getMonth() + 1).padStart(2, "0");
+
+    sstImages.push(`data/images/sst_${yyyy}${mm}16.png`);
+    anomImages.push(`data/images/anom_${yyyy}${mm}16.png`);
+    monthLabels.push(d.toLocaleString(undefined, { month: "short", year: "numeric" }));
+  }
+
+  // Update the "2025" label(s) to reflect the range of the images
+  if (sstYearLabels.length > 0 && monthLabels.length > 0) {
+    const firstYear = monthLabels[0].split(" ").pop();
+    const lastYear  = monthLabels[monthLabels.length - 1].split(" ").pop();
+    const labelText = (firstYear === lastYear) ? firstYear : `${firstYear}–${lastYear}`;
+    sstYearLabels.forEach(el => { el.textContent = labelText; });
+  }
+
+  // --- SST slider state & handlers ---
+  let sstIndex = sstImages.length - 1;  // start on most recent
 
   function updateSST() {
+    if (!sstImgEl || sstImages.length === 0) return;
     sstImgEl.src = sstImages[sstIndex];
-    sstPrevBtn.style.opacity = sstIndex === 0 ? 0.5 : 1;
-    sstNextBtn.style.opacity = sstIndex === sstImages.length - 1 ? 0.5 : 1;
+    if (sstPrevBtn) sstPrevBtn.style.opacity = (sstIndex === 0) ? 0.5 : 1;
+    if (sstNextBtn) sstNextBtn.style.opacity = (sstIndex === sstImages.length - 1) ? 0.5 : 1;
   }
 
   if (sstPrevBtn && sstNextBtn) {
@@ -492,25 +521,24 @@ document.addEventListener("DOMContentLoaded", () => {
       if (sstIndex > 0) sstIndex--;
       updateSST();
     });
+
     sstNextBtn.addEventListener("click", e => {
       e.preventDefault();
       if (sstIndex < sstImages.length - 1) sstIndex++;
       updateSST();
     });
   }
+
   updateSST();
 
-  // === ANOMALY SLIDER (local data/images/) ===
-  const anomImgEl = document.getElementById("anom-image");
-  const anomPrevBtn = document.querySelector(".anom-slider .prev");
-  const anomNextBtn = document.querySelector(".anom-slider .next");
-  const anomImages = months.map(m => `data/images/anom_${year}${m}16.png`);
-  let anomIndex = anomImages.length - 1;
+  // --- Anomaly slider state & handlers ---
+  let anomIndex = anomImages.length - 1;  // start on most recent
 
   function updateAnom() {
+    if (!anomImgEl || anomImages.length === 0) return;
     anomImgEl.src = anomImages[anomIndex];
-    anomPrevBtn.style.opacity = anomIndex === 0 ? 0.5 : 1;
-    anomNextBtn.style.opacity = anomIndex === anomImages.length - 1 ? 0.5 : 1;
+    if (anomPrevBtn) anomPrevBtn.style.opacity = (anomIndex === 0) ? 0.5 : 1;
+    if (anomNextBtn) anomNextBtn.style.opacity = (anomIndex === anomImages.length - 1) ? 0.5 : 1;
   }
 
   if (anomPrevBtn && anomNextBtn) {
@@ -519,12 +547,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (anomIndex > 0) anomIndex--;
       updateAnom();
     });
+
     anomNextBtn.addEventListener("click", e => {
       e.preventDefault();
       if (anomIndex < anomImages.length - 1) anomIndex++;
       updateAnom();
     });
   }
+
   updateAnom();
 
   // === Date update (top banner) ===
