@@ -1,6 +1,53 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""Update the TOTAL tool indicator."""
+"""
+Update the TOTAL indicator time series and forecast.
+
+This script maintains the monthly TOTAL indicator dataset that drives the
+Loggerhead Conservation Area dashboard. It reads the existing indicator
+CSV, checks ERDDAP for any new MUR SST anomaly months, appends new
+observed values for those months, computes a one-month-ahead forecast
+indicator, and writes both the updated CSV and a small JSON summary for
+the website.
+
+In broad terms, it:
+
+  1. Loads the existing indicator time series from
+     data/resources/loggerhead_indx.csv, sorts by `dateyrmo` (YYYY-MM),
+     and drops the last row (the previous forecast) so only observed
+     months remain.
+
+  2. Opens the remote MUR SST anomaly dataset
+     (jplMURSST41anommday) from ERDDAP using a retry/backoff helper
+     (`get_data_from_erddap`), and converts the `time` coordinate to a
+     list of month strings (YYYY-MM).
+
+  3. Subsets the ERDDAP grid to the configured loggerhead region
+     (LAT_RANGE and LON_RANGE) using `get_closest_value_indices`, then
+     compares ERDDAP month strings to the `dateyrmo` values already in
+     the CSV to identify any missing months (`get_missing_dates`).
+
+  4. For each missing month, extracts the regional `sstAnom` field,
+     computes a mean anomaly over the loggerhead box, derives an updated
+     indicator value based on the last six anomalies, and appends a new
+     “observed” row to the DataFrame (`process_missing_data`).
+
+  5. After filling in all new observed months, constructs a simple
+     one-month-ahead forecast: advances the last `dateyrmo` to the next
+     month, computes a forecast indicator as the mean of the last six
+     anomalies, and appends a “prediction” row to the time series.
+
+  6. Builds a small web summary dictionary (`web_data`) containing the
+     latest (forecast) indicator value, alert / no-alert status relative
+     to the 0.77 threshold, a human-readable forecast month label, and a
+     last-updated date string.
+
+  7. Writes the updated indicator series back to
+     data/resources/loggerhead_indx.csv and saves the JSON summary to
+     work/web_data.json, archiving the JSON locally via a simple rename
+     in `save_and_transfer_data`.
+
+If no new ERDDAP months are available, the script prints a message and
+exits without modifying the CSV or JSON.
+"""
 
 import os
 import netCDF4

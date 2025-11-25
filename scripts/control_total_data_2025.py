@@ -1,14 +1,37 @@
-"""Updates the TOTAL data output for the website.
-
-This script updates the TOTAL data results, which are used to update the TOTAL website.
-Updated are the monthly SST and SST anomaly maps, the TOTAL indicator, the
-TOTAL indicator plot, and the JSON file with SST and anomaly means.
-
-This script triggers other scripts that do the actual updates.
-  - update_total_indicator_2025.py
-  - plot_total_tool_2025.py
-  - make_monthly_maps_2025.py
 """
+Orchestrate monthly TOTAL data updates for the web dashboard.
+
+This script is the top-level controller for the TOTAL data pipeline. It is
+intended to be run manually or from an automated scheduler
+(e.g., GitHub Actions) and does not do any heavy science processing itself.
+Instead, it:
+
+  1. Queries ERDDAP to discover the most recent available MUR SST anomaly
+     date (jplMURSST41anommday).
+  2. Checks the dates of local TOTAL products:
+       - The loggerhead indicator time series CSV
+         (data/resources/loggerhead_indx.csv).
+       - The most recent monthly SST map in data/images/ (files starting
+         with "sst_2", e.g. sst_20250116.png).
+  3. If the indicator time series is behind ERDDAP, calls:
+       - update_total_indicator_2025.py to append new monthly indicator
+         values to loggerhead_indx.csv.
+       - plot_total_tool_2025.py to regenerate the indicator time-series
+         plot (data/images/indicator_latest.png).
+  4. If the monthly maps are behind ERDDAP, calls:
+       - make_monthly_maps_2025.py with arguments to create/update the
+         most recent SST / SST anomaly maps and associated JSON summaries.
+  5. Builds a small JSON summary (data/json/web_data.json) used by the
+     website to display the current TOTAL status (alert / no alert),
+     indicator value, forecast month label, and last update timestamp.
+
+In other words, this script compares "what ERDDAP has" vs "what the
+website already has", runs the appropriate downstream scripts to fill in
+any gaps, and then writes a simple JSON status file for the web
+dashboard. It centralizes the update logic so that external automation
+(GitHub Actions, cron, etc.) only needs to invoke this script.
+"""
+
 
 import os
 import subprocess
@@ -282,12 +305,23 @@ def main():
     # --- Create TOTAL JSON (web_data.json) ---
     print("Creating web_data.json summary...")
     try:
-        from datetime import datetime
         df = pd.read_csv(RES_DIR / CONFIG['RESOURCE_FILE'])
+        if df.empty or "dateyrmo" not in df.columns:
+            raise ValueError("loggerhead_indx.csv is empty or missing 'dateyrmo' column")
+
+        # Sort to be safe
+        df = df.sort_values(by=["dateyrmo"], ignore_index=True)
+
+        # Use the last row in the CSV (usually the forecast row) for the label
+        last_date_str = str(df["dateyrmo"].iloc[-1])[:7]  # 'YYYY-MM'
+        last_date = parse(last_date_str + "-16")          # mid-month for nice labeling
+
         latest_index = float(df["indicator"].iloc[-1])
         alert_status = "Alert" if latest_index >= 0.77 else "No Alert"
-        forecast_date = datetime.now().strftime("%B %Y")
+
+        forecast_date = last_date.strftime("%B %Y")       # e.g. "October 2025"
         update_date = datetime.now().strftime("%d %b, %Y")
+
         web_data = {
             "alert": alert_status,
             "fc_date": forecast_date,
@@ -303,8 +337,10 @@ def main():
 
         print(f"web_data.json created at {json_path}")
         print(json.dumps(web_data, indent=4))
+
     except Exception as e:
         print(f"Failed to create web_data.json: {e}")
+
 
 
 if __name__ == "__main__":
