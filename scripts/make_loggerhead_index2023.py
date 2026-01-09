@@ -131,7 +131,7 @@ def main():
     # --- UPDATE SECTION (optional)
     if args.update:
         df = pd.read_csv(RES_DIR / loggerhead_indx)
-        df.sort_values(by=["dateyrmo"], inplace=True)
+        df.sort_values(by=["dateyrmo"], inplace=True, ignore_index=True)
         df.drop(df.tail(1).index, inplace=True)
         index_time = df["dateyrmo"].values
 
@@ -151,24 +151,60 @@ def main():
         edt_time_str = [f"{t:%Y-%m}" for t in edt_time_obj]
 
         missing = sorted(set(edt_time_str) - set(index_time))
+
         if len(missing) == 0:
             print("No new data to process — continuing to JSON and plot steps.")
+            sys.exit()
         else:
             edsst = netCDF4.Dataset(opendapsst_url, "r")
             edstt_time_obj = [datetime.fromtimestamp(t).astimezone(timezone.utc) for t in edt["time"][:]]
             edstt_time_obj = [t.replace(hour=0, minute=0, second=0, microsecond=0) for t in edstt_time_obj]
-            for m in missing:
-                i = edt_time_str.index(m)
-                edt_anom = edt["sstAnom"][i, latidx_range[0]:latidx_range[1], lonidx_range[0]:lonidx_range[1]]
-                sst_i = edstt_time_obj.index(edt_time_obj[i])
+
+            indx_missing = sorted(missing)
+            both = set(edt_time_str).intersection(indx_missing)
+            indices_A = [edt_time_str.index(x) for x in both]
+            indices_A.sort()
+
+            
+            for i in indices_A:
+                dt = edt_time_obj[i]
+
+                edt_anom = edt["sstAnom"][i,
+                                        latidx_range[0]:latidx_range[1],
+                                        lonidx_range[0]:lonidx_range[1]]
+
+                sst_i = edstt_time_obj.index(dt)
+                _ = edsst["analysed_sst"][sst_i,
+                                        latidx_range[0]:latidx_range[1],
+                                        lonidx_range[0]:lonidx_range[1]]
+
                 df.loc[len(df.index)] = [
-                    round(edt_anom.mean(), 2),
-                    round(df["anom"].iloc[-6:].mean(), 2),
-                    f"{edt_time_obj[i]:%Y-%m}"
+                    f"{dt.month}/{dt.day}/{dt.year}",   # date16
+                    f"{dt.month}/1/{dt.strftime('%y')}",     # date01
+                    round(edt_anom.mean(), 2),   # anom (REAL VALUE)
+                    round(df["anom"].iloc[len(df.index)-7:len(df.index)-1].mean(), 2),  # indicator
+                    6,                           # count
+                    0,                           # stdev
+                    f"{dt:%Y-%m}",               # dateyrmo
                 ]
-            df.sort_values(by=["dateyrmo"], inplace=True)
-            df.to_csv(RES_DIR / loggerhead_indx, index=False, encoding="utf-8")
-            print(f"Updated {loggerhead_indx} with {len(missing)} new records.")
+
+        df.sort_values(by=["dateyrmo"], inplace=True, ignore_index=True)
+
+        # add ONE placeholder "next month" row (after loop)
+        next_month = parse(df.loc[len(df.index)-1]["dateyrmo"]) + timedelta(days=30)
+        
+        df.loc[len(df.index)] = [
+            f"{next_month.month}/{next_month.day}/{next_month.year}",
+            f"{next_month.month}/1/{next_month.strftime('%y')}",
+            0,
+            round(df["anom"].iloc[len(df.index)-7:len(df.index)-1].mean(), 2),
+            6,
+            0,
+            f"{next_month:%Y-%m}",
+        ]
+
+        df.to_csv(RES_DIR / loggerhead_indx, index=False, encoding="utf-8")
+        print(f"Updated {loggerhead_indx} with {len(indices_A)} new records.")
 
     # --- JSON CREATION (always runs if -j)
     if args.json:
