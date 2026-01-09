@@ -198,10 +198,15 @@ def main() -> None:
     # Define paths
     base_dir = Path.cwd()
     #work_dir = base_dir / "data" / "work"
-    results_dir = base_dir / "data" / "images"
+    
     res_dir = base_dir / "data" / "resources"
-    erddap_dir = base_dir / "data" / "upload"
     csv_file = res_dir / "loggerhead_indx.csv"
+
+    # Website served outputs (must be under docs/)
+    docs_dir = base_dir / "docs"
+    results_dir = docs_dir / "data" / "images"
+
+    erddap_dir = base_dir / "data" / "upload"
 
     indicator_png = "indicator_latest.png"
 
