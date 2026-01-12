@@ -253,7 +253,10 @@ def process_missing_data(
             # This logic assumes the new anom is a valid input for the indicator.
             current_anom = np.ma.filled(anom_data, np.nan).mean()
             #current_indicator = df['anom'].rolling(window=6, min_periods=1).mean()[-1]
-            current_indicator = df['anom'][-6:].mean()
+            
+            anom_series = pd.to_numeric(df["anom"], errors="coerce")
+            current_indicator = pd.concat([anom_series, pd.Series([current_anom])], ignore_index=True).tail(6).mean()
+
             
             # The original script calculated the new index using a mix of existing and
             # new data. This is a potential point of ambiguity. The code here
@@ -314,26 +317,6 @@ def save_and_transfer_data(
         print(f"Error saving CSV file: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Transfer files to Coastwatch server
-    try:
-        #subprocess.run(
-            #['scp', json_path.as_posix(), remote_path],
-            #check=True, capture_output=True, text=True
-        #)
-        #print(f"Successfully transferred {json_path.name}")
-        
-        subprocess.run(
-            ['mv', json_path.as_posix(), os.path.join(json_path.parent, f"{json_path.stem}_archived.json")],
-            check=True, capture_output=True, text=True
-        )
-        print("JSON file archived locally.")
-        
-    except subprocess.CalledProcessError as e:
-        print(f"SCP command failed with exit code {e.returncode}.", file=sys.stderr)
-        print("Error details:", e.stderr, file=sys.stderr)
-    except FileNotFoundError:
-        print("SCP command not found. Is it installed and in your PATH?", file=sys.stderr)
-
 
 def main():
     """Controls the update process for the TOTAL tool indicator."""
@@ -360,12 +343,6 @@ def main():
         # Sort by month
         df = df.sort_values("_dateyrmo_dt", ignore_index=True)
 
-        # Drop the existing forecast row (forecast is always appended with anom == 0 in this workflow)
-        # We treat the *latest* month row with anom==0 as forecast and remove it before rebuilding a new forecast.
-        if "anom" in df.columns:
-            max_dt = df["_dateyrmo_dt"].max()
-            df = df[~((df["_dateyrmo_dt"] == max_dt) & (pd.to_numeric(df["anom"], errors="coerce").fillna(0) == 0))].copy()
-
         # Drop helper
         df = df.drop(columns=["_dateyrmo_dt"])
 
@@ -391,13 +368,19 @@ def main():
         missing_dates = get_missing_dates(df, erddap_dates_str_set)
         print('missing_dates', missing_dates)
 
+        latest_erddap_yrmo = max(erddap_dates_str_set)  # "YYYY-MM"
+        df["dateyrmo"] = df["dateyrmo"].astype(str).str.strip()
+        df = df[df["dateyrmo"] <= latest_erddap_yrmo].copy()
+        df = df.sort_values(by=["dateyrmo"], ignore_index=True)
+
         if not missing_dates:
             print("No new data to process. Exiting.")
         
         df = process_missing_data(df, erddap_dates_str, edt, missing_dates, lat_idx_range, lon_idx_range)
 
     # Make the forecast
-    next_date = (parse(df.loc[len(df)-1, 'dateyrmo']) + timedelta(days=30)).replace(day=16)
+    last_month = parse(str(df["dateyrmo"].iloc[-1]) + "-16")  # anchor mid-month
+    next_date = (last_month + relativedelta(months=1)).replace(day=16)
     next_date_first = next_date.replace(day=1)
     #next_index = round(df['anom'].rolling(window=6, min_periods=1).mean()[-1], 2)
     next_index = round(df['anom'][-6:].mean(), 2)
@@ -431,6 +414,7 @@ def main():
     }
 
     # Final cleanup: remove any fully-empty rows and any rows missing dateyrmo
+    df.replace(r"^\s*$", np.nan, regex=True)
     df = df.dropna(how="all")
     df = df[df["dateyrmo"].notna() & (df["dateyrmo"].astype(str).str.strip() != "")]
     df = df.sort_values(by=["dateyrmo"], ignore_index=True)
