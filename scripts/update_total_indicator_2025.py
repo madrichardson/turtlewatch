@@ -54,6 +54,7 @@ import netCDF4
 import numpy as np
 from datetime import datetime, timedelta, timezone
 from dateutil.parser import parse
+from dateutil.relativedelta import relativedelta
 import sys
 import pandas as pd
 import json
@@ -364,7 +365,6 @@ def main():
 
         if not missing_dates:
             print("No new data to process. Exiting.")
-            sys.exit(0)
         
         df = process_missing_data(df, erddap_dates_str, edt, missing_dates, lat_idx_range, lon_idx_range)
 
