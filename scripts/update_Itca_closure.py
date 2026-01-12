@@ -54,7 +54,7 @@ from datetime import datetime
 from pathlib import Path
 
 # === Constants ===
-CSV_PATH = Path("data/resources/ltca_closure.csv")
+CSV_PATH = Path("docs/data/resources/ltca_closure.csv")
 API_URL = (
     "https://www.federalregister.gov/api/v1/documents.json?"
     "conditions[term]=highly+migratory+species+fishery+closure&"

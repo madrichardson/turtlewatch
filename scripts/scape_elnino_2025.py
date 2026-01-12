@@ -174,7 +174,7 @@ def main():
     # Define directories
     ROOT_DIR = CONFIG['ROOT_DIR']
     WORK_DIR = ROOT_DIR / 'work'
-    JSON_DIR = ROOT_DIR / 'data' / 'json'
+    JSON_DIR = ROOT_DIR / 'docs' / 'data' / 'json'
     
     # Create directories if they don't exist
     WORK_DIR.mkdir(exist_ok=True)
