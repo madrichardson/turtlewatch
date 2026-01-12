@@ -44,6 +44,18 @@ jobs:
 
       - name: Render Quarto site (to docs/)
         run: quarto render
+     
+      - name: Debug outputs
+        run: |
+          echo "---- find recent outputs ----"
+          find docs/data -type f -maxdepth 3 -print
+          echo "---- show web_data.json ----"
+          ls -lah docs/data/json || true
+          cat docs/data/json/web_data.json || true
+          echo "---- show last lines of CSV ----"
+          tail -n 5 docs/data/resources/loggerhead_indx.csv || true
+          echo "---- git status ----"
+          git status --porcelain
 
       - name: Commit updated docs outputs
         run: |
