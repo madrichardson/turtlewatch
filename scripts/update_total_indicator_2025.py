@@ -260,17 +260,23 @@ def process_missing_data(
             # assumes the indicator is the mean of the last 6 'anom' values.
             # If 'anom' is also being updated, the logic needs to be revisited.
             
-            # Append new row to DataFrame
-            df.loc[len(df.index)] =  [
-                date_obj.strftime('%-m/%-d/%Y'),
-                date_obj_first.strftime('%-m/%d/%y'),
-                round(current_anom, 2),
-                round(current_indicator), # This needs to be calculated after all 'anom' values are in place
-                6, # These columns need to be better named if they represent something
-                0,
-                date_obj.strftime('%Y-%m')
-            ]
-            df.sort_values(by=['dateyrmo'], ignore_index=True, inplace=True)
+            # Append new row using column names (prevents misalignment/NaN rows)
+            new_row = {c: np.nan for c in df.columns}
+            new_row[df.columns[0]] = date_obj.strftime('%-m/%-d/%Y')      # first date col
+            new_row[df.columns[1]] = date_obj_first.strftime('%-m/%d/%y') # second date col
+            new_row["anom"] = round(current_anom, 2)
+            new_row["indicator"] = round(float(current_indicator), 2)
+            new_row["dateyrmo"] = date_obj.strftime('%Y-%m')
+
+            # Preserve any extra columns if they exist
+            if len(df.columns) >= 6:
+                # if your CSV has fixed columns like window/flag, keep your defaults:
+                if df.columns[4] in new_row: new_row[df.columns[4]] = 6
+                if df.columns[5] in new_row: new_row[df.columns[5]] = 0
+
+            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+            df = df.sort_values(by=["dateyrmo"], ignore_index=True)
+
             
         except (ValueError, IndexError) as e:
             print(f"Error processing data for {date_obj.strftime('%Y-%m')}: {e}", file=sys.stderr)
@@ -331,22 +337,44 @@ def save_and_transfer_data(
 
 def main():
     """Controls the update process for the TOTAL tool indicator."""
-    
+
     # Define paths
     ROOT_DIR = CONFIG['BASE_DIR']
     RES_DIR = ROOT_DIR / 'docs' / 'data' / 'resources'
     JSON_DIR = ROOT_DIR / 'docs' / 'data' / 'json'
     WORK_DIR = ROOT_DIR / 'work'
-    
+   
     # Load and prepare indicator time series DataFrame
     try:
         df = pd.read_csv(RES_DIR / CONFIG['INDICATOR_CSV'])
+
+        # --- Clean CSV and remove any existing forecast/blank rows safely ---
+        df["dateyrmo"] = df["dateyrmo"].astype(str).str.strip()
+
+        # Convert to datetime; bad rows become NaT
+        df["_dateyrmo_dt"] = pd.to_datetime(df["dateyrmo"], format="%Y-%m", errors="coerce")
+
+        # Drop blank/garbage rows (this removes the ",,,,,," row)
+        df = df[df["_dateyrmo_dt"].notna()].copy()
+
+        # Sort by month
+        df = df.sort_values("_dateyrmo_dt", ignore_index=True)
+
+        # Drop the existing forecast row (forecast is always appended with anom == 0 in this workflow)
+        # We treat the *latest* month row with anom==0 as forecast and remove it before rebuilding a new forecast.
+        if "anom" in df.columns:
+            max_dt = df["_dateyrmo_dt"].max()
+            df = df[~((df["_dateyrmo_dt"] == max_dt) & (pd.to_numeric(df["anom"], errors="coerce").fillna(0) == 0))].copy()
+
+        # Drop helper
+        df = df.drop(columns=["_dateyrmo_dt"])
+
     except FileNotFoundError:
         print(f"Indicator CSV not found at {RES_DIR / CONFIG['INDICATOR_CSV']}", file=sys.stderr)
         sys.exit(1)
         
-    df = df.sort_values(by=['dateyrmo'], ignore_index=True)
-    df = df.drop(df.tail(1).index) # Drop the prediction row
+    #df = df.sort_values(by=['dateyrmo'], ignore_index=True)
+    #df = df.drop(df.tail(1).index) # Drop the prediction row
 
     # Find available data from ERDDAP
     with get_data_from_erddap(CONFIG['DATASET_NAME']) as edt:
@@ -374,17 +402,20 @@ def main():
     #next_index = round(df['anom'].rolling(window=6, min_periods=1).mean()[-1], 2)
     next_index = round(df['anom'][-6:].mean(), 2)
     
-    # Add prediction row to the DataFrame
-    prediction_row = [
-        next_date.strftime('%-m/%d/%Y'),
-        next_date_first.strftime('%-m/%-d/%y'),
-        0,
-        next_index,
-        6,
-        0,
-        next_date.strftime('%Y-%m')
-    ]
-    df.loc[len(df.index)] = prediction_row
+    # Append forecast row using column names (prevents ",,,,,," row)
+    forecast_row = {c: np.nan for c in df.columns}
+    forecast_row[df.columns[0]] = next_date.strftime('%-m/%d/%Y')
+    forecast_row[df.columns[1]] = next_date_first.strftime('%-m/%-d/%y')
+    forecast_row["anom"] = 0
+    forecast_row["indicator"] = float(next_index)
+    forecast_row["dateyrmo"] = next_date.strftime('%Y-%m')
+
+    if len(df.columns) >= 6:
+        if df.columns[4] in forecast_row: forecast_row[df.columns[4]] = 6
+        if df.columns[5] in forecast_row: forecast_row[df.columns[5]] = 0
+
+    df = pd.concat([df, pd.DataFrame([forecast_row])], ignore_index=True)
+
     
     # Prepare data for web
     latest_index = df['indicator'].iloc[-1]
@@ -398,6 +429,11 @@ def main():
         'update_date': update_date,
         'new_index': str(latest_index)
     }
+
+    # Final cleanup: remove any fully-empty rows and any rows missing dateyrmo
+    df = df.dropna(how="all")
+    df = df[df["dateyrmo"].notna() & (df["dateyrmo"].astype(str).str.strip() != "")]
+    df = df.sort_values(by=["dateyrmo"], ignore_index=True)
 
     # Save and transfer files
     save_and_transfer_data(
