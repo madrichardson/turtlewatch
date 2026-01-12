@@ -121,6 +121,39 @@ def fetch_with_retry(
             )
             time.sleep(sleep_for)
 
+
+
+def _parse_yrmo_series(df: pd.DataFrame) -> pd.Series:
+    """Parse dateyrmo to datetime (YYYY-MM -> first of month). Invalid become NaT."""
+    return pd.to_datetime(df["dateyrmo"].astype(str).str.strip(), format="%Y-%m", errors="coerce")
+
+
+def split_observed_and_forecast(df: pd.DataFrame, latest_erddap_date: datetime) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Split indicator DF into observed rows (<= ERDDAP latest month) and forecast rows (> ERDDAP latest month).
+    """
+    if df.empty or "dateyrmo" not in df.columns:
+        return df, df.iloc[0:0]
+
+    yrmo_dt = _parse_yrmo_series(df)
+
+    # ERDDAP latest month (normalize to first of month)
+    erddap_month = pd.Timestamp(latest_erddap_date.year, latest_erddap_date.month, 1)
+
+    # observed = valid dateyrmo and <= erddap month
+    observed_mask = yrmo_dt.notna() & (yrmo_dt <= erddap_month)
+    forecast_mask = yrmo_dt.notna() & (yrmo_dt > erddap_month)
+
+    observed = df.loc[observed_mask].copy()
+    forecast = df.loc[forecast_mask].copy()
+
+    # Keep sorted
+    observed = observed.sort_values("dateyrmo", ignore_index=True)
+    forecast = forecast.sort_values("dateyrmo", ignore_index=True)
+
+    return observed, forecast
+
+
 # Define a function to get the latest available date from ERDDAP
 def get_latest_erddap_date(session: requests.Session) -> datetime:
     """Fetches the most recent data date from the ERDDAP server.
@@ -198,20 +231,28 @@ def find_latest_file_date(directory: Path, pattern: str) -> datetime:
         print(f"Error finding latest file in {directory}: {e}", file=sys.stderr)
         return datetime.min
 
-def get_latest_indicator_date(csv_path: Path) -> datetime:
-    """Return the most recent date from the loggerhead indicator CSV."""
+
+def get_latest_indicator_date(csv_path: Path, latest_erddap_date: datetime) -> datetime:
+    """Return the most recent OBSERVED month from the loggerhead indicator CSV."""
     try:
         df = pd.read_csv(csv_path)
-        if "dateyrmo" not in df.columns or df.empty:
-            print("CSV has no dateyrmo column or is empty.", file=sys.stderr)
+        if df.empty or "dateyrmo" not in df.columns:
+            print("CSV is empty or missing 'dateyrmo'.", file=sys.stderr)
             return datetime.min
-        # sort just in case rows are out of order
-        df = df.sort_values(by=["dateyrmo"])
-        latest_str = str(df["dateyrmo"].iloc[-1])  # e.g. "2025-08"
-        return parse(latest_str).replace(tzinfo=None)
+
+        observed, _forecast = split_observed_and_forecast(df, latest_erddap_date)
+
+        if observed.empty:
+            print(f"No observed rows found in {csv_path}", file=sys.stderr)
+            return datetime.min
+
+        latest_obs_str = str(observed["dateyrmo"].iloc[-1])
+        return parse(latest_obs_str).replace(tzinfo=None)
+
     except Exception as e:
         print(f"Error reading indicator CSV {csv_path}: {e}", file=sys.stderr)
         return datetime.min
+
 
 # Define a function to run a script with subprocess
 def run_script(python_path: Path, script_path: Path, args: list = []) -> bool:
@@ -268,7 +309,7 @@ def main():
     with requests.Session() as session:
         latest_erddap_date = get_latest_erddap_date(session).replace(tzinfo=None)
 
-    latest_total_date = get_latest_indicator_date(RES_DIR / CONFIG['RESOURCE_FILE']).replace(tzinfo=None)
+    latest_total_date = get_latest_indicator_date(RES_DIR / CONFIG['RESOURCE_FILE'], latest_erddap_date).replace(tzinfo=None)
     latest_map_date = find_latest_file_date(MAP_DIR, CONFIG['MAP_FILE_PREFIX']).replace(tzinfo=None)
     
     print(f"Most recent MUR data: {latest_erddap_date.strftime('%Y-%m')}")
@@ -305,28 +346,35 @@ def main():
     # --- Create TOTAL JSON (web_data.json) ---
     print("Creating web_data.json summary...")
     try:
-        df = pd.read_csv(RES_DIR / CONFIG['RESOURCE_FILE'])
+        df = pd.read_csv(RES_DIR / CONFIG["RESOURCE_FILE"])
         if df.empty or "dateyrmo" not in df.columns:
             raise ValueError("loggerhead_indx.csv is empty or missing 'dateyrmo' column")
 
-        # Sort to be safe
-        df = df.sort_values(by=["dateyrmo"], ignore_index=True)
+        observed, forecast = split_observed_and_forecast(df, latest_erddap_date)
 
-        # Use the last row in the CSV (usually the forecast row) for the label
-        last_date_str = str(df["dateyrmo"].iloc[-1])[:7]  # 'YYYY-MM'
-        last_date = parse(last_date_str + "-16")          # mid-month for nice labeling
+        # Prefer forecast row for the dashboard IF it exists
+        if not forecast.empty:
+            row = forecast.iloc[-1]
+        else:
+            row = observed.iloc[-1]  # fall back to last observed
 
-        latest_index = float(df["indicator"].iloc[-1])
+        # Guard against broken forecast rows (this is what causes nan-16)
+        dateyrmo_val = row.get("dateyrmo", None)
+        if pd.isna(dateyrmo_val) or str(dateyrmo_val).strip() == "":
+            raise ValueError("Selected dashboard row has blank/NaN dateyrmo (likely a malformed forecast row)")
+
+        label_date = parse(str(dateyrmo_val)[:7] + "-16")
+        forecast_date = label_date.strftime("%B %Y")
+
+        latest_index = float(row["indicator"])
         alert_status = "Alert" if latest_index >= 0.77 else "No Alert"
-
-        forecast_date = last_date.strftime("%B %Y")       # e.g. "October 2025"
         update_date = datetime.now().strftime("%d %b, %Y")
 
         web_data = {
             "alert": alert_status,
             "fc_date": forecast_date,
             "update_date": update_date,
-            "new_index": f"{latest_index:.2f}"
+            "new_index": f"{latest_index:.2f}",
         }
 
         json_dir = CONFIG['ROOT_DIR'] / "data" / "json"
