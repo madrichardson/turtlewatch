@@ -14,7 +14,7 @@ Instead, it:
        - The most recent monthly SST map in data/images/ (files starting
          with "sst_2", e.g. sst_20250116.png).
   3. If the indicator time series is behind ERDDAP, calls:
-       - make_loggerhead_index2023.py to append new monthly indicator
+       - update_total_indicator_2025.py to append new monthly indicator
          values to loggerhead_indx.csv.
        - plot_total_tool_2025.py to regenerate the indicator time-series
          plot (data/images/indicator_latest.png).
@@ -253,7 +253,7 @@ def main():
         'ERDDAP_URL': 'https://coastwatch.pfeg.noaa.gov/erddap/griddap',
         'PYTHON_PATH': Path(sys.executable),
         'SCRIPTS': {
-            'total_py': 'make_loggerhead_index2023.py',
+            'total_py': 'update_total_indicator_2025.py',
             'plot_py': 'plot_total_tool_2025.py',
             'maps_py': 'make_monthly_maps_2025.py'
         },
