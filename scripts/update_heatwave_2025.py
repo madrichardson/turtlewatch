@@ -193,7 +193,6 @@ def main():
     CONFIG = {
         'ROOT_DIR': Path.cwd().resolve(),
         'WORK_DIR_NAME': 'work',
-        'DOCS_DIR_NAME': 'docs',
         'DATA_DIR_NAME': 'data',
         'JSON_DIR_NAME': 'json',
         'OUT_FILE_NAME': 'heatwave.json',
@@ -203,7 +202,7 @@ def main():
 
     ROOT_DIR = CONFIG['ROOT_DIR']
     WORK_DIR = ROOT_DIR / CONFIG['WORK_DIR_NAME']
-    JSON_DIR = ROOT_DIR / CONFIG['DOCS_DIR_NAME'] / CONFIG['DATA_DIR_NAME'] / CONFIG['JSON_DIR_NAME']
+    JSON_DIR = ROOT_DIR / CONFIG['DATA_DIR_NAME'] / CONFIG['JSON_DIR_NAME']
     JSON_DIR.mkdir(parents=True, exist_ok=True)
 
     parser = argparse.ArgumentParser(description='Update TOTAL heatwave status. Use -o to force overwrite.')
