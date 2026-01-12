@@ -42,22 +42,16 @@ jobs:
       - name: Update closure history from Federal Register
         run: python scripts/update_Itca_closure.py
 
-      - name: Commit updated data & images
+      - name: Render Quarto site (to docs/)
+        run: quarto render
+
+      - name: Commit updated docs outputs
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/json/*.json data/images/*.png data/resources/*.csv
-          git commit -m "Automated TOTAL data update" || echo "No changes to commit"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/
+          git commit -m "Automated dashboard update" || echo "No changes to commit"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Render Quarto site
-        uses: quarto-dev/quarto-actions/render@v2
-        with:
-          to: html
-
-      - name: Deploy to GitHub Pages
-        uses: quarto-dev/quarto-actions/publish@v2
-        with:
-          target: gh-pages
