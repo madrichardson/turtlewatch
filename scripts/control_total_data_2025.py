@@ -303,8 +303,8 @@ def main():
     }
 
     BIN_DIR = CONFIG['ROOT_DIR'] / 'scripts'
-    RES_DIR = CONFIG['ROOT_DIR'] / 'data' / 'resources'
-    MAP_DIR = CONFIG['ROOT_DIR'] / 'data' / 'images'
+    RES_DIR = CONFIG['ROOT_DIR'] / 'docs' / 'data' / 'resources'
+    MAP_DIR = CONFIG['ROOT_DIR'] / 'docs' / 'data' / 'images'
 
     with requests.Session() as session:
         latest_erddap_date = get_latest_erddap_date(session).replace(tzinfo=None)
@@ -377,7 +377,7 @@ def main():
             "new_index": f"{latest_index:.2f}",
         }
 
-        json_dir = CONFIG['ROOT_DIR'] / "data" / "json"
+        json_dir = CONFIG['ROOT_DIR'] / "docs" / "data" / "json"
         json_dir.mkdir(parents=True, exist_ok=True)
         json_path = json_dir / "web_data.json"
         with open(json_path, "w") as f:
