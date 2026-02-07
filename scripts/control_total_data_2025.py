@@ -254,6 +254,23 @@ def get_latest_indicator_date(csv_path: Path, latest_erddap_date: datetime) -> d
         return datetime.min
 
 
+def has_valid_forecast_row(csv_path: Path, latest_erddap_date: datetime) -> bool:
+    """
+    Return True if the indicator CSV contains at least one forecast row
+    (dateyrmo month > latest ERDDAP month).
+    """
+    try:
+        df = pd.read_csv(csv_path)
+        if df.empty or "dateyrmo" not in df.columns:
+            return False
+
+        _observed, forecast = split_observed_and_forecast(df, latest_erddap_date)
+        return not forecast.empty
+
+    except Exception:
+        return False
+
+
 # Define a function to run a script with subprocess
 def run_script(python_path: Path, script_path: Path, args: list = []) -> bool:
     """Runs a Python script and returns its success status.
@@ -316,20 +333,24 @@ def main():
     print(f"Most recent indicator: {latest_total_date.strftime('%Y-%m')}")
     print(f"Most recent maps: {latest_map_date.strftime('%Y-%m')}")
 
-    # Check and update the total indicator
-    if latest_total_date < latest_erddap_date:
-        print("Updating TOTAL indicator...")
-        if run_script(
-            CONFIG['PYTHON_PATH'],
-            BIN_DIR / CONFIG['SCRIPTS']['total_py']
-        ):
+    
+    csv_path = RES_DIR / CONFIG['RESOURCE_FILE']
+
+    needs_observed_update = latest_total_date < latest_erddap_date
+    missing_forecast = not has_valid_forecast_row(csv_path, latest_erddap_date)
+
+    if needs_observed_update or missing_forecast:
+        if needs_observed_update:
+            print("Updating TOTAL indicator (new observed months available)...")
+        else:
+            print("Rebuilding TOTAL forecast row (forecast missing)...")
+
+        if run_script(CONFIG['PYTHON_PATH'], BIN_DIR / CONFIG['SCRIPTS']['total_py']):
             print("TOTAL indicator updated successfully. Running plot script.")
-            run_script(
-                CONFIG['PYTHON_PATH'],
-                BIN_DIR / CONFIG['SCRIPTS']['plot_py']
-            )
+            run_script(CONFIG['PYTHON_PATH'], BIN_DIR / CONFIG['SCRIPTS']['plot_py'])
     else:
-        print("TOTAL indicator is up to date.")
+        print("TOTAL indicator is up to date (including forecast).")
+
 
     # Check and update the maps
     if latest_map_date < latest_erddap_date:
