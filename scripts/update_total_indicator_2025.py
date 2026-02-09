@@ -130,7 +130,7 @@ def process_missing_data(
                 date_obj.strftime('%-m/%-d/%Y'),
                 date_obj_first.strftime('%-m/%d/%y'),
                 round(current_anom, 2),
-                round(current_indicator), # This needs to be calculated after all 'anom' values are in place
+                round(current_indicator, 2), # This needs to be calculated after all 'anom' values are in place
                 6, # These columns need to be better named if they represent something
                 0,
                 date_obj.strftime('%Y-%m')
