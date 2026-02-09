@@ -149,7 +149,6 @@ def save_and_transfer_data(
     df: pd.DataFrame,
     json_path: Path,
     csv_path: Path,
-    remote_path: str
 ) -> None:
     """Saves data to JSON and CSV files and transfers them via SCP."""
     # Save web data to JSON file
