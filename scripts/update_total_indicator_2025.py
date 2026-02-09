@@ -27,7 +27,6 @@ __status__ = "Production"
 # --- Configuration and Constants ---
 CONFIG = {
     'BASE_DIR': Path(__file__).resolve().parents[1],
-    'CW_SERVER': 'cwatch@192.168.31.15:/var/www/html/elnino/dash',
     'LAT_RANGE': [30.8, 34.5],
     'LON_RANGE': [-120.3, -116],
     'URL_BASE': 'https://coastwatch.pfeg.noaa.gov/erddap/griddap/{}',
@@ -267,8 +266,7 @@ def main():
         web_data,
         df,
         WORK_DIR / CONFIG['WEB_DATA_JSON'],
-        RES_DIR / CONFIG['INDICATOR_CSV'],
-        CONFIG['CW_SERVER']
+        RES_DIR / CONFIG['INDICATOR_CSV']
     )
 
 
