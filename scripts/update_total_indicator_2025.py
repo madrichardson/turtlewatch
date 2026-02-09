@@ -216,7 +216,8 @@ def get_missing_dates(df: pd.DataFrame, erddap_dates_str: List[datetime]) -> Lis
     
     missing_dates = [parse(dt_str) for dt_str in missing_dates_str]
     return missing_dates
-    
+
+
 def get_missing_dates_OLD(df: pd.DataFrame, erddap_time_obj: List[datetime]) -> List[datetime]:
     """Compares local data dates with ERDDAP dates to find missing months."""
     local_dates = set(df['dateyrmo'].values)
@@ -237,7 +238,10 @@ def process_missing_data(
     erddap_data: netCDF4.Dataset,
     missing_dates: List[datetime],
     lat_idx_range: Tuple[int, int],
-    lon_idx_range: Tuple[int, int]
+    lon_idx_range: Tuple[int, int],
+    anom_idx: int,
+    ind_idx: int,
+    yrmo_idx: int
 ) -> pd.DataFrame:
     """Calculates new indicator values and appends them to the DataFrame."""    
     for date_obj in missing_dates:
@@ -264,21 +268,24 @@ def process_missing_data(
             # If 'anom' is also being updated, the logic needs to be revisited.
             
             # Append new row using column names (prevents misalignment/NaN rows)
-            new_row = {c: np.nan for c in df.columns}
-            new_row[df.columns[0]] = date_obj.strftime('%-m/%-d/%Y')      # first date col
-            new_row[df.columns[1]] = date_obj_first.strftime('%-m/%d/%y') # second date col
-            new_row["anom"] = round(current_anom, 2)
-            new_row["indicator"] = round(float(current_indicator), 2)
-            new_row["dateyrmo"] = date_obj.strftime('%Y-%m')
+            new_row = [np.nan] * len(df.columns)
+            new_row[0] = date_obj.strftime('%-m/%-d/%Y')
+            new_row[1] = date_obj_first.strftime('%-m/%d/%y')
 
-            # Preserve any extra columns if they exist
+            new_row[anom_idx] = round(current_anom, 2)
+
+            new_row[ind_idx] = round(float(current_indicator), 2)
+
+            # dateyrmo
+            new_row[yrmo_idx] = date_obj.strftime('%Y-%m')
+
+            # Preserve fixed metadata columns if they exist
             if len(df.columns) >= 6:
-                # if your CSV has fixed columns like window/flag, keep your defaults:
-                if df.columns[4] in new_row: new_row[df.columns[4]] = 6
-                if df.columns[5] in new_row: new_row[df.columns[5]] = 0
+                new_row[4] = 6
+                new_row[5] = 0
 
-            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-            df = df.sort_values(by=["dateyrmo"], ignore_index=True)
+            df.loc[len(df)] = new_row
+            df = df.sort_values(by="dateyrmo", ignore_index=True)
 
             
         except (ValueError, IndexError) as e:
@@ -350,6 +357,10 @@ def main():
         print(f"Indicator CSV not found at {RES_DIR / CONFIG['INDICATOR_CSV']}", file=sys.stderr)
         sys.exit(1)
         
+    anom_idx = df.columns.get_loc("anom")
+    ind_idx = df.columns.get_loc("indicator")
+    yrmo_idx = df.columns.get_loc("dateyrmo")
+
     #df = df.sort_values(by=['dateyrmo'], ignore_index=True)
     #df = df.drop(df.tail(1).index) # Drop the prediction row
 
@@ -376,7 +387,17 @@ def main():
         if not missing_dates:
             print("No new data to process. Exiting.")
         
-        df = process_missing_data(df, erddap_dates_str, edt, missing_dates, lat_idx_range, lon_idx_range)
+        df = process_missing_data(
+            df,
+            erddap_dates_str,
+            edt,
+            missing_dates,
+            lat_idx_range,
+            lon_idx_range,
+            anom_idx,
+            ind_idx,
+            yrmo_idx
+        )
 
     # Make the forecast
     last_month = parse(str(df["dateyrmo"].iloc[-1]) + "-16")  # anchor mid-month
