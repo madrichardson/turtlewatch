@@ -167,6 +167,9 @@ def save_and_transfer_data(
         
     # Save indicator time series to CSV
     try:
+        df["anom"] = pd.to_numeric(df["anom"], errors="coerce").round(2)
+        df["indicator"] = pd.to_numeric(df["indicator"], errors="coerce").round(2)
+
         df.to_csv(csv_path, index=False, encoding='utf-8')
         print(f"CSV file saved to {csv_path}")
     except IOError as e:
