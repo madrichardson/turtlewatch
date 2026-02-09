@@ -109,9 +109,14 @@ def process_missing_data(
                                                lat_idx_range[0]:lat_idx_range[1],
                                                lon_idx_range[0]:lon_idx_range[1]]
             
+            tmp = np.ma.filled(anom_data, np.nan)
+            print("any NaN?", np.isnan(tmp).any())
+            print("mean:", tmp.mean())
+            print("nanmean:", np.nanmean(tmp))
+            
             # Calculate the new indicator value based on the last 6 months
             # This logic assumes the new anom is a valid input for the indicator.
-            current_anom = np.ma.filled(anom_data, np.nan).mean()
+            current_anom = np.nanmean(np.ma.filled(anom_data, np.nan))
             #current_indicator = df['anom'].rolling(window=6, min_periods=1).mean()[-1]
             current_indicator = df['anom'][-6:].mean()
             
